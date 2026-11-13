@@ -12,7 +12,7 @@ La licencia del proyecto es Apache 2.0, la habitual en librerías Java y la mism
 | [Prowide ISO 20022](https://github.com/prowide/prowide-iso20022) | Modelo Java de los mensajes, como adaptador opcional futuro | Ninguno por ahora | Apache 2.0 |
 | SnakeYAML | Lectura de perfiles | `isobridge-core` | Por confirmar |
 | Spring Boot | Autoconfiguración | Solo el starter | Apache 2.0 |
-| JUnit 5, AssertJ, XMLUnit | Pruebas | Todos, solo en pruebas | Por confirmar |
+| JUnit, AssertJ, XMLUnit | Pruebas | Todos, solo en pruebas | JUnit: EPL 2.0; AssertJ y XMLUnit: Apache 2.0 |
 
 El núcleo define su propia interfaz mínima de mensaje ISO 8583 (`Iso8583Message`), de modo que j8583 es un adaptador y no una dependencia obligatoria. Quien use otro parser escribe un adaptador de pocas líneas.
 
@@ -24,7 +24,7 @@ Las versiones exactas se fijan al crear el `pom.xml`, con las últimas estables.
 | --- | --- |
 | Lenguaje | Java 17 como mínimo, para ser compatible con Spring Boot 3 |
 | Construcción | Maven, con el wrapper incluido |
-| Pruebas | JUnit 5 y AssertJ; comparación de XML con XMLUnit |
+| Pruebas | JUnit (Jupiter) y AssertJ; comparación de XML con XMLUnit |
 | YAML | SnakeYAML, limitado a tipos seguros |
 | Calidad | Formato automático, análisis estático y cobertura con JaCoCo en el CI |
 | Versionado | Versionado semántico; el formato del perfil lleva su propio número de versión |

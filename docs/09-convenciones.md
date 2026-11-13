@@ -48,7 +48,7 @@ Reglas que sigue todo cambio en el repositorio, lo escriba una persona o un agen
 | Perfiles incluidos | Prueba de ida y vuelta y validación contra el XSD |
 | Starter | `ApplicationContextRunner` |
 
-- JUnit 5 y AssertJ. Sin frameworks de simulación salvo necesidad real.
+- JUnit (Jupiter) y AssertJ. Sin frameworks de simulación salvo necesidad real.
 - Primero la prueba, luego el código.
 - Las pruebas no dependen de la red, de la hora real ni del orden de ejecución.
 - Los datos de prueba son ficticios. Ningún número de tarjeta real.
