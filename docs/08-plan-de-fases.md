@@ -23,7 +23,7 @@ Objetivo: un repositorio donde cualquier cambio posterior se pueda compilar y pr
 - [x] Primera prueba real y su código: el conversor `currency-code` (840 ↔ USD, código desconocido rechazado).
 - [x] Formato automático del código con un plugin de Maven, verificado en `verify`.
 - [x] JaCoCo configurado, sin umbral todavía.
-- [ ] GitHub Actions: `./mvnw verify` en cada push y pull request.
+- [x] GitHub Actions: `./mvnw verify` en cada push y pull request.
 - [ ] `README.md` con qué es el proyecto, su estado y cómo construirlo.
 - [ ] `AGENTS.md` y `docs/` en el repositorio.
 
