@@ -16,7 +16,7 @@ La fase 1 sola ya es una librería útil y demostrable.
 
 Objetivo: un repositorio donde cualquier cambio posterior se pueda compilar y probar con un comando.
 
-- [ ] `.gitignore` con `target/`, `.idea/`, `*.iml` y archivos del sistema operativo. Sacar `.idea/` del índice de Git si ya se subió.
+- [x] `.gitignore` con `target/`, `.idea/`, `*.iml` y archivos del sistema operativo. Sacar `.idea/` del índice de Git si ya se subió.
 - [ ] `pom.xml` padre: `groupId` `io.github.suricatoaviones`, `packaging` `pom`, `maven.compiler.release` 17, UTF-8, gestión de versiones de JUnit 5 y AssertJ.
 - [ ] Módulo `isobridge-core` con `src/main/java` y `src/test/java`. Los demás módulos se crean en la fase que los necesita.
 - [ ] Wrapper de Maven (`mvnw`, `mvnw.cmd`, `.mvn/`).
