@@ -19,6 +19,12 @@ import org.junit.jupiter.params.provider.CsvSource;
 class CurrencyCodeConverterTest {
 
   private final CurrencyCodeConverter converter = new CurrencyCodeConverter();
+  private final ConversionContext context = new TestConversionContext();
+
+  @Test
+  void returnsItsProfileName() {
+    assertThat(converter.name()).isEqualTo("currency-code");
+  }
 
   @ParameterizedTest
   @CsvSource({
@@ -38,16 +44,23 @@ class CurrencyCodeConverterTest {
     "532, XCG",
     "068, BOB",
     "984, BOV",
-    "999, XXX"
+    "999, XXX",
   })
   void convertsNumericCodeToAlphabetic(String numeric, String alphabetic) {
-    assertThat(converter.toAlphabetic(numeric)).isEqualTo(alphabetic);
+    assertThat(converter.forward(numeric, context)).isEqualTo(alphabetic);
   }
 
   @ParameterizedTest
-  @CsvSource({"USD, 840", "EUR, 978", "ALL, 008", "UYW, 927", "BOV, 984", "XXX, 999"})
+  @CsvSource({
+    "USD, 840",
+    "EUR, 978",
+    "ALL, 008",
+    "UYW, 927",
+    "BOV, 984",
+    "XXX, 999",
+  })
   void convertsAlphabeticCodeToZeroPaddedNumeric(String alphabetic, String numeric) {
-    assertThat(converter.toNumeric(alphabetic)).isEqualTo(numeric);
+    assertThat(converter.reverse(alphabetic, context)).isEqualTo(numeric);
   }
 
   @Test
@@ -57,45 +70,51 @@ class CurrencyCodeConverterTest {
     table.forEach((alphabetic, numeric) -> {
       assertThat(alphabetic).matches("[A-Z]{3}");
       assertThat(numeric).matches("\\d{3}");
-      assertThat(converter.toNumeric(alphabetic))
+      assertThat(converter.reverse(alphabetic, context))
           .as("reverse of %s", alphabetic)
           .isEqualTo(numeric);
-      assertThat(converter.toAlphabetic(numeric))
+      assertThat(converter.forward(numeric, context))
           .as("forward of %s", numeric)
           .isEqualTo(alphabetic);
     });
   }
 
   @Test
+  void ignoresTheContext() {
+    assertThat(converter.forward("840", null)).isEqualTo("USD");
+    assertThat(converter.reverse("USD", null)).isEqualTo("840");
+  }
+
+  @Test
   void normalizesSurroundingWhitespaceAndCase() {
-    assertThat(converter.toNumeric("  usd ")).isEqualTo("840");
+    assertThat(converter.reverse("  usd ", context)).isEqualTo("840");
   }
 
   @Test
   void rejectsUnknownNumericCode() {
-    assertThatThrownBy(() -> converter.toAlphabetic("000"))
+    assertThatThrownBy(() -> converter.forward("000", context))
         .isInstanceOf(ConversionException.class)
         .hasMessageContaining("000");
-    assertThatThrownBy(() -> converter.toAlphabetic("123"))
+    assertThatThrownBy(() -> converter.forward("123", context))
         .isInstanceOf(ConversionException.class)
         .hasMessageContaining("123");
   }
 
   @Test
   void rejectsUnknownAlphabeticCode() {
-    assertThatThrownBy(() -> converter.toNumeric("ZZZ"))
+    assertThatThrownBy(() -> converter.reverse("ZZZ", context))
         .isInstanceOf(ConversionException.class)
         .hasMessageContaining("ZZZ");
   }
 
   @Test
   void rejectsWithdrawnCodesEvenThoughTheJdkStillKnowsThem() {
-    // ZWL was replaced by ZWG in 2024 and 891 was last used by CSD and YUM,
-    // but java.util.Currency still reports both.
-    assertThatThrownBy(() -> converter.toNumeric("ZWL"))
+    // ZWL was replaced by ZWG in 2024 and 891 was last used by CSD and YUM, but java.util.Currency
+    // still reports both.
+    assertThatThrownBy(() -> converter.reverse("ZWL", context))
         .isInstanceOf(ConversionException.class)
         .hasMessageContaining("ZWL");
-    assertThatThrownBy(() -> converter.toAlphabetic("891"))
+    assertThatThrownBy(() -> converter.forward("891", context))
         .isInstanceOf(ConversionException.class)
         .hasMessageContaining("891");
   }
@@ -103,7 +122,7 @@ class CurrencyCodeConverterTest {
   @ParameterizedTest
   @CsvSource({"84", "8400", "84A", "ABC"})
   void rejectsMalformedNumericCode(String value) {
-    assertThatThrownBy(() -> converter.toAlphabetic(value))
+    assertThatThrownBy(() -> converter.forward(value, context))
         .isInstanceOf(ConversionException.class)
         .hasMessageContaining("three-digit");
   }
@@ -111,28 +130,30 @@ class CurrencyCodeConverterTest {
   @ParameterizedTest
   @CsvSource({"US", "USDD", "US1", "123"})
   void rejectsMalformedAlphabeticCode(String value) {
-    assertThatThrownBy(() -> converter.toNumeric(value))
+    assertThatThrownBy(() -> converter.reverse(value, context))
         .isInstanceOf(ConversionException.class)
         .hasMessageContaining("three-letter");
   }
 
   @Test
   void rejectsEmptyNumericCode() {
-    assertThatThrownBy(() -> converter.toAlphabetic(""))
+    assertThatThrownBy(() -> converter.forward("", context))
         .isInstanceOf(ConversionException.class)
         .hasMessageContaining("three-digit");
   }
 
   @Test
   void rejectsBlankAlphabeticCode() {
-    assertThatThrownBy(() -> converter.toNumeric("   "))
+    assertThatThrownBy(() -> converter.reverse("   ", context))
         .isInstanceOf(ConversionException.class)
         .hasMessageContaining("three-letter");
   }
 
   @Test
   void rejectsNullValues() {
-    assertThatThrownBy(() -> converter.toAlphabetic(null)).isInstanceOf(NullPointerException.class);
-    assertThatThrownBy(() -> converter.toNumeric(null)).isInstanceOf(NullPointerException.class);
+    assertThatThrownBy(() -> converter.forward(null, context))
+        .isInstanceOf(NullPointerException.class);
+    assertThatThrownBy(() -> converter.reverse(null, context))
+        .isInstanceOf(NullPointerException.class);
   }
 }

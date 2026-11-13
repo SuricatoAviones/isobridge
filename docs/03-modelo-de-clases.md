@@ -75,6 +75,8 @@ Rombo relleno: composición. Rombo vacío: agregación. Línea punteada: depende
 | `IsoBridge` | Clase final inmutable | Se construye con un `Builder`; segura entre hilos |
 | `Profile`, `FieldMapping`, `MessageSpec` | `record` | Se crean al leer el YAML, ya validados |
 | `FieldConverter` | Interfaz | Punto de extensión; los incluidos se registran por nombre |
+| `ConversionContext` | Interfaz | La implementa el motor: reloj, otros campos del mensaje y `args` |
+| `ConverterRegistry` | Clase final inmutable | Conversores indexados por nombre; `withBuiltIns()` trae los incluidos |
 | `Iso8583Message` | Interfaz | La implementa un adaptador por cada parser |
 | `XmlDocumentAccess` | Interfaz | Lee y escribe valores del XML por ruta; la implementa `isobridge-iso20022` |
 | `ConversionResult`, `ConversionReport`, `ReportEntry` | `record` | `ConversionResult<T>` es genérico: lleva un XML (`String`) o un `Iso8583Message` |
@@ -114,6 +116,19 @@ public interface FieldConverter {
     String reverse(String value, ConversionContext context);
 
     static FieldConverter of(String name, UnaryOperator<String> forward, UnaryOperator<String> reverse);
+}
+
+public interface ConversionContext {
+    Clock clock();
+    Optional<String> field(String reference);
+    Optional<Object> argument(String name);
+}
+
+public final class ConverterRegistry {
+    public static ConverterRegistry empty();
+    public static ConverterRegistry withBuiltIns();
+    public ConverterRegistry register(FieldConverter converter);
+    public Optional<FieldConverter> byName(String name);
 }
 
 public interface Iso8583Message {

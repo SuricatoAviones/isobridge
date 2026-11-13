@@ -15,9 +15,9 @@ import java.util.TreeMap;
  * <p>Examples:
  *
  * <ul>
- *   <li>Forward: {@code toAlphabetic("840")} returns {@code "USD"}
- *   <li>Reverse: {@code toNumeric("USD")} returns {@code "840"}
- *   <li>Reverse with zero padding: {@code toNumeric("ALL")} returns {@code "008"}
+ *   <li>Forward: the value {@code "840"} becomes {@code "USD"}
+ *   <li>Reverse: the value {@code "USD"} becomes {@code "840"}
+ *   <li>Reverse with zero padding: the value {@code "ALL"} becomes {@code "008"}
  * </ul>
  *
  * <p>The table of codes is embedded in this class and holds the active entries of ISO 4217 List One
@@ -34,7 +34,7 @@ import java.util.TreeMap;
  * reverse conversion always returns the numeric code of whatever alphabetic code is given, so it
  * stays exact.
  */
-public final class CurrencyCodeConverter {
+public final class CurrencyCodeConverter implements FieldConverter {
 
   /**
    * Active ISO 4217 List One codes, one {@code ALPHABETIC=NUMERIC} pair per code, separated by
@@ -47,17 +47,47 @@ public final class CurrencyCodeConverter {
   private static final Map<String, String> ALPHABETIC_TO_NUMERIC = buildAlphabeticToNumeric();
   private static final Map<String, String> NUMERIC_TO_ALPHABETIC = buildNumericToAlphabetic();
 
+  /** The name of this converter in a profile: {@code currency-code}. */
+  @Override
+  public String name() {
+    return "currency-code";
+  }
+
   /**
    * Converts a three-digit numeric ISO 4217 code into its alphabetic form.
    *
-   * <p>Example: {@code toAlphabetic("840")} returns {@code "USD"}.
+   * <p>Example: {@code forward("840", context)} returns {@code "USD"}.
    *
-   * @param numericCode a three-digit numeric code, such as {@code "840"}
+   * @param value a three-digit numeric code, such as {@code "840"}
+   * @param context not used by this converter
    * @return the alphabetic code, such as {@code "USD"}
    * @throws ConversionException if the value is not a three-digit code or is not an active ISO 4217
    *     currency
    */
-  public String toAlphabetic(String numericCode) {
+  @Override
+  public String forward(String value, ConversionContext context) {
+    return toAlphabetic(value);
+  }
+
+  /**
+   * Converts an alphabetic ISO 4217 code into its three-digit numeric form, zero padded.
+   *
+   * <p>Example: {@code reverse("USD", context)} returns {@code "840"} and {@code reverse("ALL",
+   * context)} returns {@code "008"}.
+   *
+   * @param value a three-letter alphabetic code, such as {@code "USD"}; case and surrounding
+   *     whitespace are ignored
+   * @param context not used by this converter
+   * @return the zero-padded numeric code, such as {@code "840"}
+   * @throws ConversionException if the value is not a three-letter code or is not an active ISO
+   *     4217 currency
+   */
+  @Override
+  public String reverse(String value, ConversionContext context) {
+    return toNumeric(value);
+  }
+
+  private String toAlphabetic(String numericCode) {
     Objects.requireNonNull(numericCode, "numericCode");
     String value = numericCode.strip();
     if (!value.matches("\\d{3}")) {
@@ -71,19 +101,7 @@ public final class CurrencyCodeConverter {
     return alphabetic;
   }
 
-  /**
-   * Converts an alphabetic ISO 4217 code into its three-digit numeric form, zero padded.
-   *
-   * <p>Example: {@code toNumeric("USD")} returns {@code "840"} and {@code toNumeric("ALL")} returns
-   * {@code "008"}.
-   *
-   * @param alphabeticCode a three-letter alphabetic code, such as {@code "USD"}; case and
-   *     surrounding whitespace are ignored
-   * @return the zero-padded numeric code, such as {@code "840"}
-   * @throws ConversionException if the value is not a three-letter code or is not an active ISO
-   *     4217 currency
-   */
-  public String toNumeric(String alphabeticCode) {
+  private String toNumeric(String alphabeticCode) {
     Objects.requireNonNull(alphabeticCode, "alphabeticCode");
     String value = alphabeticCode.strip().toUpperCase(Locale.ROOT);
     if (!value.matches("[A-Z]{3}")) {

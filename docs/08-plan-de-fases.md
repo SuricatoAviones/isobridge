@@ -35,7 +35,7 @@ Objetivo: convertir un 0200 en un pacs.008 válido y explicar el resultado.
 
 En este orden, porque cada tarea se apoya en la anterior:
 
-- [ ] Interfaz `FieldConverter`, `ConversionContext` y registro de conversores por nombre. Adaptar `currency-code` a la interfaz.
+- [x] Interfaz `FieldConverter`, `ConversionContext` y registro de conversores por nombre. Adaptar `currency-code` a la interfaz.
 - [ ] Conversores `minor-units`, `mmddhhmmss-utc`, `local-date-time`, `pad-left`, `pad-right`, `trim`, `lookup`, cada uno con pruebas de ida y de vuelta.
 - [ ] Interfaz `Iso8583Message` y una implementación en memoria para pruebas (`MapIso8583Message`).
 - [ ] Modelo del perfil: `Profile`, `FieldMapping`, `MessageSpec`, `Direction`.
