@@ -26,7 +26,7 @@ Las versiones exactas se fijan al crear el `pom.xml`, con las últimas estables.
 | Construcción | Maven, con el wrapper incluido |
 | Pruebas | JUnit (Jupiter) y AssertJ; comparación de XML con XMLUnit |
 | YAML | SnakeYAML, limitado a tipos seguros |
-| Calidad | Formato con [Spotless](https://github.com/diffplug/spotless) y google-java-format (ambos Apache 2.0), comprobado en `verify`; cobertura con JaCoCo |
+| Calidad | Formato con [Spotless](https://github.com/diffplug/spotless) y google-java-format (ambos Apache 2.0), comprobado en `verify`; cobertura con [JaCoCo](https://www.jacoco.org/jacoco/) (EPL 2.0) |
 | Versionado | Versionado semántico; el formato del perfil lleva su propio número de versión |
 
 ## Proyectos relacionados
