@@ -22,11 +22,11 @@ Las versiones exactas se fijan al crear el `pom.xml`, con las últimas estables.
 
 | Aspecto | Elección |
 | --- | --- |
-| Lenguaje | Java 17 como mínimo, para ser compatible con Spring Boot 3 |
+| Lenguaje | Java 17 como mínimo para la biblioteca, para ser compatible con Spring Boot 3. Construir con `./mvnw verify` exige JDK 21, porque google-java-format 2.0 lo requiere |
 | Construcción | Maven, con el wrapper incluido |
 | Pruebas | JUnit (Jupiter) y AssertJ; comparación de XML con XMLUnit |
 | YAML | SnakeYAML, limitado a tipos seguros |
-| Calidad | Formato automático, análisis estático y cobertura con JaCoCo en el CI |
+| Calidad | Formato con [Spotless](https://github.com/diffplug/spotless) y google-java-format (ambos Apache 2.0), comprobado en `verify`; cobertura con JaCoCo |
 | Versionado | Versionado semántico; el formato del perfil lleva su propio número de versión |
 
 ## Proyectos relacionados
