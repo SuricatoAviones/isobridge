@@ -25,7 +25,7 @@ Objetivo: un repositorio donde cualquier cambio posterior se pueda compilar y pr
 - [x] JaCoCo configurado, sin umbral todavía.
 - [x] GitHub Actions: `./mvnw verify` en cada push y pull request.
 - [x] `README.md` con qué es el proyecto, su estado y cómo construirlo.
-- [ ] `AGENTS.md` y `docs/` en el repositorio.
+- [x] `AGENTS.md` y `docs/` en el repositorio.
 
 Cierre: en una máquina con solo el JDK, `./mvnw verify` termina en `BUILD SUCCESS` y el CI pasa en `main`.
 
