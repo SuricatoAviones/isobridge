@@ -20,7 +20,7 @@ Objetivo: un repositorio donde cualquier cambio posterior se pueda compilar y pr
 - [x] `pom.xml` padre: `groupId` `io.github.suricatoaviones`, `packaging` `pom`, `maven.compiler.release` 17, UTF-8, gestión de versiones de JUnit 5 y AssertJ.
 - [x] Módulo `isobridge-core` con `src/main/java` y `src/test/java`. Los demás módulos se crean en la fase que los necesita.
 - [x] Wrapper de Maven (`mvnw`, `mvnw.cmd`, `.mvn/`).
-- [ ] Primera prueba real y su código: el conversor `currency-code` (840 ↔ USD, código desconocido rechazado).
+- [x] Primera prueba real y su código: el conversor `currency-code` (840 ↔ USD, código desconocido rechazado).
 - [ ] Formato automático del código con un plugin de Maven, verificado en `verify`.
 - [ ] JaCoCo configurado, sin umbral todavía.
 - [ ] GitHub Actions: `./mvnw verify` en cada push y pull request.

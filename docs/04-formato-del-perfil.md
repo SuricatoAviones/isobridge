@@ -111,6 +111,7 @@ unmapped: report   # report | fail | supplementary
 Detalles:
 
 - **`minor-units`** toma el número de decimales de la moneda indicada en `args.currency`. No todas las monedas tienen 2 decimales: el yen tiene 0 y el dinar kuwaití 3. Usa `BigDecimal`, nunca `double`.
+- **`currency-code`** lleva embebida la lista activa de ISO 4217 (tabla «Current currency & funds code list»; fuente: la agencia de mantenimiento SIX, vía el conjunto de datos `datasets/currency-codes`, recuperada el 2026-11-13). Los códigos retirados se rechazan en lugar de aceptarse en silencio. No se usa `java.util.Currency` porque incluye códigos retirados y va por detrás de las enmiendas de ISO. Hoy ningún código numérico está compartido por dos códigos alfabéticos; si una enmienda lo compartiera, la ida devolvería el alfabéticamente menor y la vuelta seguiría siendo exacta.
 - **Año inferido.** ISO 8583 no transmite el año en DE 7 ni en DE 13. Se infiere con el reloj inyectado: se elige el año que deja la fecha más cerca del momento actual. El informe lo marca como `INFERRED`.
 - **`lookup`** recibe su tabla en `args.table` y un valor `args.default` opcional. Si la tabla no es unívoca, la vuelta necesita otra fuente para recuperar el valor original (ver `05-perfil-incluido.md`).
 
