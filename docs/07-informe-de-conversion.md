@@ -42,6 +42,8 @@ Serializado a JSON:
 - Los valores no se incluyen por defecto. Con el detalle activado se incluyen, y los marcados como sensibles salen enmascarados.
 - En modo estricto, un `DROPPED` sobre un campo `required` lanza una excepción en lugar de devolver el informe.
 - El informe es un objeto inmutable con métodos de consulta: `hasLosses()`, `dropped()`, `summary()`.
+- El informe lleva el identificador y la versión del perfil, y el sentido de la conversión.
+- Una entrada `EXCLUDED` no lleva valor nunca: el constructor del informe lo rechaza.
 - Las entradas siguen el orden del perfil; después van los campos no mapeados, por número de campo.
 - Las notas (`note`) se escriben en inglés, como el resto del código.
 
@@ -49,7 +51,7 @@ Serializado a JSON:
 
 | Dato | Regla |
 | --- | --- |
-| Número de tarjeta | Se conservan los primeros 6 y los últimos 4 dígitos; el resto se reemplaza por `*` |
+| Número de tarjeta | Se conservan los primeros 6 y los últimos 4 dígitos; el resto se reemplaza por `*`. Se reconoce por el campo, `de2`, no por la marca `sensitive`, que puede faltar por error. Con 10 caracteres o menos se enmascara entero, porque conservar 6 y 4 no ocultaría nada |
 | Otro campo `sensitive` | Se reemplaza completo por `***` |
 | Campos de `never` | Nunca tienen valor en el informe, ni siquiera enmascarado |
 
@@ -63,7 +65,7 @@ Devuelve una línea apta para un registro:
 card-transfer-pacs008 v1 ISO8583_TO_ISO20022: 12 mapped, 2 supplementary, 1 inferred, 1 dropped (de55), 2 excluded
 ```
 
-Nunca incluye valores de campos.
+Solo aparecen los estados que tienen entradas, en este orden: `mapped`, `defaulted`, `generated`, `supplementary`, `inferred`, `dropped`, `excluded`. Los descartados llevan sus campos entre paréntesis. Un informe sin entradas termina en `no entries`. Nunca incluye valores de campos.
 
 ## Serialización
 

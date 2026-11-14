@@ -54,6 +54,9 @@ classDiagram
     +report() ConversionReport
   }
   class ConversionReport {
+    +String profile
+    +int profileVersion
+    +ConversionDirection direction
     +boolean lossless
     +List~ReportEntry~ entries
     +hasLosses() boolean
@@ -61,9 +64,12 @@ classDiagram
     +summary() String
   }
   class ReportEntry {
+    +String id
     +String source
     +String target
     +Status status
+    +String converter
+    +String value
     +String note
   }
 
@@ -98,6 +104,7 @@ Rombo relleno: composición. Rombo vacío: agregación. Línea punteada: depende
 | `MapIso8583Message` | Clase mutable de pruebas | Implementación en memoria de `Iso8583Message`; vive en `src/test` |
 | `XmlDocumentAccess` | Interfaz | Lee y escribe valores del XML por ruta; la implementa `isobridge-iso20022` |
 | `ConversionResult`, `ConversionReport`, `ReportEntry` | `record` | `ConversionResult<T>` es genérico: lleva un XML (`String`) o un `Iso8583Message` |
+| `Masking` | Clase final con métodos estáticos | Enmascara el PAN y los campos sensibles antes de guardarlos en el informe |
 
 ## Enumeraciones
 
@@ -174,6 +181,38 @@ public sealed interface FieldReference permits FieldReference.Mti, FieldReferenc
 public record ElementPath(List<String> elements, Optional<String> attribute) {
     public static ElementPath parse(String text);
     public boolean isAttribute();
+}
+
+public record ConversionReport(
+    String profile,
+    int profileVersion,
+    ConversionDirection direction,
+    boolean lossless,
+    List<ReportEntry> entries) {
+
+    public static ConversionReport of(
+        String profile, int profileVersion, ConversionDirection direction, List<ReportEntry> entries);
+    public boolean hasLosses();
+    public List<ReportEntry> dropped();
+    public String summary();
+}
+
+public record ReportEntry(
+    String id,
+    String source,
+    String target,
+    Status status,
+    String converter,
+    String value,
+    String note) {
+
+    public static ReportEntry of(FieldMapping field, Status status, String value, String note);
+    public static ReportEntry of(FieldMapping field, Status status, String note);
+}
+
+public final class Masking {
+    public static String mask(FieldMapping field, String value);
+    public static String maskCardNumber(String value);
 }
 
 public interface Iso8583Message {
