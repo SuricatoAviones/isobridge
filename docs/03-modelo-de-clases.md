@@ -78,6 +78,7 @@ Rombo relleno: composición. Rombo vacío: agregación. Línea punteada: depende
 | `ConversionContext` | Interfaz | La implementa el motor: reloj, otros campos del mensaje y `args` |
 | `ConverterRegistry` | Clase final inmutable | Conversores indexados por nombre; `withBuiltIns()` trae los incluidos |
 | `Iso8583Message` | Interfaz | La implementa un adaptador por cada parser |
+| `MapIso8583Message` | Clase mutable de pruebas | Implementación en memoria de `Iso8583Message`; vive en `src/test` |
 | `XmlDocumentAccess` | Interfaz | Lee y escribe valores del XML por ruta; la implementa `isobridge-iso20022` |
 | `ConversionResult`, `ConversionReport`, `ReportEntry` | `record` | `ConversionResult<T>` es genérico: lleva un XML (`String`) o un `Iso8583Message` |
 

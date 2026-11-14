@@ -37,7 +37,7 @@ En este orden, porque cada tarea se apoya en la anterior:
 
 - [x] Interfaz `FieldConverter`, `ConversionContext` y registro de conversores por nombre. Adaptar `currency-code` a la interfaz.
 - [x] Conversores `minor-units`, `mmddhhmmss-utc`, `local-date-time`, `pad-left`, `pad-right`, `trim`, `lookup`, cada uno con pruebas de ida y de vuelta.
-- [ ] Interfaz `Iso8583Message` y una implementación en memoria para pruebas (`MapIso8583Message`).
+- [x] Interfaz `Iso8583Message` y una implementación en memoria para pruebas (`MapIso8583Message`).
 - [ ] Modelo del perfil: `Profile`, `FieldMapping`, `MessageSpec`, `Direction`.
 - [ ] Lector del YAML y validación al cargar, con todos los errores y su línea (RF-12).
 - [ ] Analizador de la sintaxis de `from` (`de4`, `de3[0:2]`, `de48.01`) y de `to` (rutas y atributos).
