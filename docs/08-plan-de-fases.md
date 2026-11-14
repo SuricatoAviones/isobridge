@@ -42,7 +42,7 @@ En este orden, porque cada tarea se apoya en la anterior:
 - [x] Lector del YAML y validación al cargar, con todos los errores y su línea (RF-12).
 - [x] Analizador de la sintaxis de `from` (`de4`, `de3[0:2]`, `de48.01`) y de `to` (rutas y atributos).
 - [x] Modelo del informe: `ConversionReport`, `ReportEntry`, `Status`, enmascarado (RF-06, RF-09).
-- [ ] Interfaz `XmlDocumentAccess` en `core`.
+- [x] Interfaz `XmlDocumentAccess` en `core`.
 - [ ] Módulo `isobridge-iso20022`: escritura del XML por rutas en el orden del XSD, con entidades externas deshabilitadas.
 - [ ] Motor de mapeo en sentido de ida e `IsoBridge.toIso20022`, con `constants`, `generated`, `never` y `unmapped`.
 - [ ] Módulo `isobridge-profiles` con el perfil `card-transfer-pacs008.yaml`, verificado contra el XSD.

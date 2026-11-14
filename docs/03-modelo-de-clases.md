@@ -222,6 +222,12 @@ public interface Iso8583Message {
     Set<Integer> presentFields();
 }
 
+public interface XmlDocumentAccess {
+    Optional<String> read(String path);
+    void write(String path, String value);
+    String toXml();
+}
+
 public record Profile(
     String id,
     int version,
