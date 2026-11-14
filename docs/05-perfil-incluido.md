@@ -96,13 +96,16 @@ DE 39 escribe en dos elementos a la vez (estado y motivo). El formato del perfil
 
 Los campos sin elemento propio en ISO 20022 (terminal, comercio, código de autorización, código de respuesta original) viajan en `SplmtryData`, para que la vuelta los recupere. El formato exacto de ese bloque es una pregunta abierta en `10-dependencias-y-preguntas.md`. Mientras no exista, el perfil de la solicitud no incluye DE 41 ni DE 42: si vienen, el informe los marca `DROPPED`.
 
-## Prueba de ida y vuelta
+## Prueba de extremo a extremo
 
-Cada perfil incluido tiene una prueba que:
+La prueba de la fase 1 parte de `isobridge-profiles/src/test/resources/messages/0200-card-transfer.properties`, convierte el mensaje con el perfil incluido, valida el XML contra `pacs.008.001.08.xsd` y comprueba el informe completo. Los valores de ejemplo son ficticios y usan rangos de tarjeta de prueba, nunca tarjetas reales.
 
-1. Parte de un mensaje ISO 8583 de ejemplo con todos los campos mapeados.
-2. Lo convierte a XML y valida el XML contra su XSD.
-3. Convierte ese XML de vuelta a ISO 8583.
-4. Comprueba que el mensaje final es igual al inicial, salvo en los campos que esta tabla declara como no reversibles.
+El resumen esperado es:
 
-Los datos de ejemplo son ficticios. Los números de tarjeta de prueba usan rangos de prueba conocidos, nunca tarjetas reales.
+```text
+card-transfer-pacs008 v1 ISO8583_TO_ISO20022: 10 mapped, 5 defaulted, 1 generated, 2 inferred, 3 dropped (de41, de42, de55), 2 excluded
+```
+
+La prueba también comprueba que el número de tarjeta sale enmascarado cuando el informe lleva valores y que el identificador generado por defecto cabe en `Max35Text`.
+
+La fase 2 añadirá la prueba de ida y vuelta: convertir el XML de vuelta a ISO 8583 y comprobar que el mensaje final es igual al inicial, salvo en los campos que estas tablas declaren como no reversibles.

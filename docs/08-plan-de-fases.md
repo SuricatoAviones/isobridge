@@ -46,9 +46,9 @@ En este orden, porque cada tarea se apoya en la anterior:
 - [x] Módulo `isobridge-iso20022`: escritura del XML por rutas en el orden del XSD, con entidades externas deshabilitadas.
 - [x] Motor de mapeo en sentido de ida e `IsoBridge.toIso20022`, con `constants`, `generated`, `never` y `unmapped`.
 - [x] Módulo `isobridge-profiles` con el perfil `card-transfer-pacs008.yaml`, verificado contra el XSD.
-- [ ] Prueba de extremo a extremo: un 0200 de ejemplo produce un pacs.008 que valida contra su XSD, con el informe esperado.
+- [x] Prueba de extremo a extremo: un 0200 de ejemplo produce un pacs.008 que valida contra su XSD, con el informe esperado.
 
-Cierre: la prueba de extremo a extremo pasa y la cobertura de `core` es de 90% o más.
+Cierre: la prueba de extremo a extremo pasa y la cobertura de líneas de `core` es del 90% o más. Cumplido el 13 de noviembre de 2026: la prueba usa el 0200 de `0200-card-transfer.properties` y comprueba el informe completo; la cobertura de líneas de `core` es del 90,49%.
 
 ## Fase 2 — Vuelta
 

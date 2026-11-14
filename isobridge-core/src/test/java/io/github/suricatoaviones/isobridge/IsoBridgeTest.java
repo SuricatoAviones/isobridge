@@ -2,7 +2,10 @@ package io.github.suricatoaviones.isobridge;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 
+import io.github.suricatoaviones.isobridge.convert.ConversionContext;
+import io.github.suricatoaviones.isobridge.convert.FieldConverter;
 import io.github.suricatoaviones.isobridge.message.Iso8583Message;
 import io.github.suricatoaviones.isobridge.message.MapIso8583Message;
 import io.github.suricatoaviones.isobridge.message.XmlDocumentAccess;
@@ -383,6 +386,307 @@ class IsoBridgeTest {
         });
   }
 
+  @Test
+  void skipsMappingsThatOnlyApplyInTheReverseDirection() {
+    RecordingXmlDocumentAccess xml = new RecordingXmlDocumentAccess();
+    FieldMapping reverse =
+        new FieldMapping(
+            "rrn",
+            "de37",
+            "CdtTrfTxInf/PmtId/EndToEndId",
+            Direction.REVERSE,
+            false,
+            false,
+            Optional.empty(),
+            Map.of());
+    Profile profile =
+        profile(
+            "reverse",
+            "0200",
+            Profile.Unmapped.REPORT,
+            List.of(reverse, mapping("amount", "de4", "CdtTrfTxInf/IntrBkSttlmAmt")));
+    IsoBridge bridge = bridge(profile, xml);
+    MapIso8583Message message = new MapIso8583Message("0200");
+    message.setField(4, "100");
+    message.setField(37, "RRN-1");
+
+    ConversionResult<String> result = bridge.toIso20022(message);
+
+    assertThat(xml.values())
+        .containsEntry("CdtTrfTxInf/IntrBkSttlmAmt", "100")
+        .doesNotContainKey("CdtTrfTxInf/PmtId/EndToEndId");
+    assertThat(result.report().entries())
+        .extracting(ReportEntry::source, ReportEntry::status)
+        .containsExactly(tuple("de4", Status.MAPPED), tuple("de37", Status.DROPPED));
+  }
+
+  @Test
+  void reportsTheMtiAsExcludedWhenItIsListedInNever() {
+    RecordingXmlDocumentAccess xml = new RecordingXmlDocumentAccess();
+    Profile profile =
+        profile(
+            "never-mti",
+            "0200",
+            Profile.Unmapped.REPORT,
+            List.of(mapping("amount", "de4", "CdtTrfTxInf/IntrBkSttlmAmt")),
+            List.of(),
+            Set.of("mti"));
+    IsoBridge bridge = bridge(profile, xml);
+    MapIso8583Message message = new MapIso8583Message("0200");
+    message.setField(4, "100");
+
+    ConversionResult<String> result = bridge.toIso20022(message);
+
+    assertThat(result.report().entries())
+        .extracting(ReportEntry::source, ReportEntry::status)
+        .containsExactly(tuple("de4", Status.MAPPED), tuple("mti", Status.EXCLUDED));
+  }
+
+  @Test
+  void failsWhenAFieldIsShorterThanItsSlice() {
+    Profile profile =
+        profile(
+            "slice",
+            "0200",
+            Profile.Unmapped.REPORT,
+            List.of(mapping("process", "de3[0:3]", "CdtTrfTxInf/PmtTpInf/LclInstrm/Prtry")));
+    IsoBridge bridge = bridge(profile, new RecordingXmlDocumentAccess());
+    MapIso8583Message message = new MapIso8583Message("0200");
+    message.setField(3, "99");
+
+    assertThatThrownBy(() -> bridge.toIso20022(message))
+        .isInstanceOf(ConversionException.class)
+        .hasMessageContaining("de3[0:3]")
+        .hasMessageContaining("shorter");
+  }
+
+  @Test
+  void rejectsAnUnknownConverterAtBuildTime() {
+    FieldMapping unknown =
+        new FieldMapping(
+            "amount",
+            "de4",
+            "CdtTrfTxInf/IntrBkSttlmAmt",
+            Direction.BOTH,
+            false,
+            false,
+            Optional.of("upper-case"),
+            Map.of());
+    Profile profile =
+        profile("unknown-converter", "0200", Profile.Unmapped.REPORT, List.of(unknown));
+
+    assertThatThrownBy(() -> bridge(profile, new RecordingXmlDocumentAccess()))
+        .isInstanceOf(IsoBridgeException.class)
+        .hasMessageContaining("upper-case")
+        .hasMessageContaining("unknown-converter");
+  }
+
+  @Test
+  void rejectsTwoProfilesWithTheSameTargetMessage() {
+    Profile request =
+        profile(
+            "request",
+            "0200",
+            Profile.Unmapped.REPORT,
+            List.of(mapping("amount", "de4", "CdtTrfTxInf/IntrBkSttlmAmt")));
+    Profile response =
+        profile(
+            "response",
+            "0210",
+            Profile.Unmapped.REPORT,
+            List.of(mapping("amount", "de4", "CdtTrfTxInf/IntrBkSttlmAmt")));
+
+    assertThatThrownBy(() -> bridge(List.of(request, response), new RecordingXmlDocumentAccess()))
+        .isInstanceOf(IsoBridgeException.class)
+        .hasMessageContaining(PACS_008)
+        .hasMessageContaining("request")
+        .hasMessageContaining("response");
+  }
+
+  @Test
+  void registersAdditionalConvertersAndPassesThemTheirArguments() {
+    RecordingXmlDocumentAccess xml = new RecordingXmlDocumentAccess();
+    FieldConverter surround =
+        new FieldConverter() {
+
+          @Override
+          public String name() {
+            return "surround";
+          }
+
+          @Override
+          public String forward(String value, ConversionContext context) {
+            String suffix = String.valueOf(context.argument("suffix").orElse(""));
+            String count = String.valueOf(context.argument("count").orElse(""));
+            String stan = context.field("de11").orElse("");
+            return value + "|" + suffix + "|" + count + "|" + stan;
+          }
+
+          @Override
+          public String reverse(String value, ConversionContext context) {
+            return value;
+          }
+        };
+    FieldMapping custom =
+        new FieldMapping(
+            "custom",
+            "de3",
+            "CdtTrfTxInf/PmtTpInf/LclInstrm/Prtry",
+            Direction.BOTH,
+            false,
+            false,
+            Optional.of("surround"),
+            Map.of("suffix", "X", "count", 3, "stan", "de11"));
+    Profile profile = profile("custom", "0200", Profile.Unmapped.REPORT, List.of(custom));
+    IsoBridge bridge =
+        IsoBridge.builder()
+            .profile(profile)
+            .converter(surround)
+            .clock(CLOCK)
+            .idGenerator(() -> "MSG-1")
+            .xmlFactory((message, root) -> xml)
+            .build();
+    MapIso8583Message message = new MapIso8583Message("0200");
+    message.setField(3, "A");
+    message.setField(11, "STAN-1");
+
+    ConversionResult<String> result = bridge.toIso20022(message);
+
+    assertThat(xml.values()).containsEntry("CdtTrfTxInf/PmtTpInf/LclInstrm/Prtry", "A|X|3|STAN-1");
+    assertThat(result.report().entries()).extracting(ReportEntry::source).containsExactly("de3");
+  }
+
+  @Test
+  void rejectsASubfieldReferenceUsedAsAConverterArgument() {
+    FieldMapping custom =
+        new FieldMapping(
+            "custom",
+            "de4",
+            "CdtTrfTxInf/IntrBkSttlmAmt",
+            Direction.BOTH,
+            false,
+            false,
+            Optional.of("minor-units"),
+            Map.of("currency", "de48.01"));
+    Profile profile =
+        profile("subfield-argument", "0200", Profile.Unmapped.REPORT, List.of(custom));
+    IsoBridge bridge = bridge(profile, new RecordingXmlDocumentAccess());
+    MapIso8583Message message = new MapIso8583Message("0200");
+    message.setField(4, "000000012550");
+    message.setField(48, "0101subfield");
+
+    assertThatThrownBy(() -> bridge.toIso20022(message))
+        .isInstanceOf(IsoBridgeException.class)
+        .hasMessageContaining("de48.01");
+  }
+
+  @Test
+  void generatesTheCurrentTimeWhenAsked() {
+    RecordingXmlDocumentAccess xml = new RecordingXmlDocumentAccess();
+    Profile profile =
+        profile(
+            "now",
+            "0200",
+            Profile.Unmapped.REPORT,
+            List.of(mapping("amount", "de4", "CdtTrfTxInf/IntrBkSttlmAmt")),
+            List.of(new Profile.Generated("GrpHdr/CreDtTm", "now")),
+            Set.of());
+    IsoBridge bridge = bridge(profile, xml);
+    MapIso8583Message message = new MapIso8583Message("0200");
+    message.setField(4, "100");
+
+    ConversionResult<String> result = bridge.toIso20022(message);
+
+    assertThat(xml.values()).containsEntry("GrpHdr/CreDtTm", "2026-11-13T10:00:00Z");
+    assertThat(result.report().entries())
+        .filteredOn(entry -> entry.status() == Status.GENERATED)
+        .extracting(ReportEntry::source)
+        .containsExactly("GrpHdr/CreDtTm");
+  }
+
+  @Test
+  void rejectsABlankGeneratedMessageId() {
+    Profile profile =
+        profile(
+            "blank-id",
+            "0200",
+            Profile.Unmapped.REPORT,
+            List.of(mapping("amount", "de4", "CdtTrfTxInf/IntrBkSttlmAmt")),
+            List.of(new Profile.Generated("GrpHdr/MsgId", "message-id")),
+            Set.of());
+    IsoBridge bridge =
+        IsoBridge.builder()
+            .profile(profile)
+            .clock(CLOCK)
+            .idGenerator(() -> "  ")
+            .xmlFactory((message, root) -> new RecordingXmlDocumentAccess())
+            .build();
+    MapIso8583Message message = new MapIso8583Message("0200");
+    message.setField(4, "100");
+
+    assertThatThrownBy(() -> bridge.toIso20022(message))
+        .isInstanceOf(IsoBridgeException.class)
+        .hasMessageContaining("blank");
+  }
+
+  @Test
+  void rejectsAnUnknownGeneratedValue() {
+    Profile profile =
+        profile(
+            "unknown-generated",
+            "0200",
+            Profile.Unmapped.REPORT,
+            List.of(mapping("amount", "de4", "CdtTrfTxInf/IntrBkSttlmAmt")),
+            List.of(new Profile.Generated("GrpHdr/MsgId", "sequence")),
+            Set.of());
+    IsoBridge bridge = bridge(profile, new RecordingXmlDocumentAccess());
+    MapIso8583Message message = new MapIso8583Message("0200");
+    message.setField(4, "100");
+
+    assertThatThrownBy(() -> bridge.toIso20022(message))
+        .isInstanceOf(IsoBridgeException.class)
+        .hasMessageContaining("sequence");
+  }
+
+  @Test
+  void usesTheDefaultMessageIdGenerator() {
+    RecordingXmlDocumentAccess xml = new RecordingXmlDocumentAccess();
+    Profile profile =
+        profile(
+            "default-id",
+            "0200",
+            Profile.Unmapped.REPORT,
+            List.of(mapping("amount", "de4", "CdtTrfTxInf/IntrBkSttlmAmt")),
+            List.of(new Profile.Generated("GrpHdr/MsgId", "message-id")),
+            Set.of());
+    IsoBridge bridge =
+        IsoBridge.builder()
+            .profile(profile)
+            .clock(CLOCK)
+            .xmlFactory((message, root) -> xml)
+            .build();
+    MapIso8583Message message = new MapIso8583Message("0200");
+    message.setField(4, "100");
+
+    bridge.toIso20022(message);
+
+    assertThat(xml.values().get("GrpHdr/MsgId")).matches("[0-9a-f]{32}");
+  }
+
+  @Test
+  void rejectsABridgeWithoutAnXmlFactory() {
+    Profile profile =
+        profile(
+            "no-factory",
+            "0200",
+            Profile.Unmapped.REPORT,
+            List.of(mapping("amount", "de4", "CdtTrfTxInf/IntrBkSttlmAmt")));
+
+    assertThatThrownBy(() -> IsoBridge.builder().profile(profile).build())
+        .isInstanceOf(NullPointerException.class)
+        .hasMessageContaining("xmlFactory");
+  }
+
   private static MapIso8583Message request() {
     MapIso8583Message message = new MapIso8583Message("0200");
     message.setField(2, "5413331234564821");
@@ -399,6 +703,26 @@ class IsoBridgeTest {
   private static Profile profile(
       String id, String mti, Profile.Unmapped unmapped, List<FieldMapping> fields) {
     return profile(id, mti, PACS_008, PACS_008_ROOT, unmapped, fields);
+  }
+
+  private static Profile profile(
+      String id,
+      String mti,
+      Profile.Unmapped unmapped,
+      List<FieldMapping> fields,
+      List<Profile.Generated> generated,
+      Set<String> never) {
+    return new Profile(
+        id,
+        1,
+        Optional.empty(),
+        MessageSpec.iso8583(mti),
+        MessageSpec.iso20022(PACS_008, PACS_008_ROOT),
+        fields,
+        List.of(),
+        generated,
+        never,
+        unmapped);
   }
 
   private static Profile profile(

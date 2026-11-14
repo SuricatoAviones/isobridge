@@ -18,7 +18,11 @@ final class TestConversionContext implements ConversionContext {
   }
 
   TestConversionContext(Map<String, String> fields, Map<String, Object> arguments) {
-    this.clock = Clock.fixed(Instant.parse("2026-11-13T12:00:00Z"), ZoneOffset.UTC);
+    this(Clock.fixed(Instant.parse("2026-11-13T12:00:00Z"), ZoneOffset.UTC), fields, arguments);
+  }
+
+  TestConversionContext(Clock clock, Map<String, String> fields, Map<String, Object> arguments) {
+    this.clock = clock;
     this.fields = Map.copyOf(fields);
     this.arguments = Map.copyOf(arguments);
   }

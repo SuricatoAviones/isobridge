@@ -4,6 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.github.suricatoaviones.isobridge.ConversionException;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -53,6 +56,19 @@ class LocalDateTimeConverterTest {
     assertThatThrownBy(() -> converter.forward("111326", contextWithTime(value)))
         .isInstanceOf(ConversionException.class)
         .hasMessageContaining("hhmmss");
+  }
+
+  @Test
+  void rejectsADateThatIsInvalidInTheCenturyClosestToTheClock() {
+    ConversionContext context =
+        new TestConversionContext(
+            Clock.fixed(Instant.parse("1901-01-01T00:00:00Z"), ZoneOffset.UTC),
+            Map.of(),
+            Map.of("time", "120000"));
+
+    assertThatThrownBy(() -> converter.forward("022900", context))
+        .isInstanceOf(ConversionException.class)
+        .hasMessageContaining("no valid year");
   }
 
   @Test
