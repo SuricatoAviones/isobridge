@@ -38,13 +38,16 @@ Serializado a JSON:
 ## Reglas
 
 - `lossless` es verdadero solo si ningún campo quedó como `DROPPED`.
+- Si falta un campo marcado `required`, la conversión lanza `RequiredFieldException` con su referencia y el identificador del mapeo, sin ningún valor.
 - Un campo `EXCLUDED` no cuenta como pérdida: es una decisión del perfil.
-- Los valores no se incluyen por defecto. Con el detalle activado se incluyen, y los marcados como sensibles salen enmascarados.
+- Los valores no se incluyen por defecto. Con `reportValues(true)` se incluyen, y los marcados como sensibles salen enmascarados.
 - En modo estricto, un `DROPPED` sobre un campo `required` lanza una excepción en lugar de devolver el informe.
 - El informe es un objeto inmutable con métodos de consulta: `hasLosses()`, `dropped()`, `summary()`.
 - El informe lleva el identificador y la versión del perfil, y el sentido de la conversión.
 - Una entrada `EXCLUDED` no lleva valor nunca: el constructor del informe lo rechaza.
-- Las entradas siguen el orden del perfil; después van los campos no mapeados, por número de campo.
+- Las entradas siguen el orden del perfil: primero los campos con valor que aplican al sentido, después `constants`, `generated` y `never` en el orden del YAML, y al final los campos no mapeados por número de campo.
+- `INFERRED` lo declara el conversor: `mmddhhmmss-utc` y `local-date-time` infieren el año o el siglo que el origen no trae.
+- En la fase 1 no se emite `SUPPLEMENTARY`: los perfiles que piden `unmapped: supplementary` se rechazan al construir el puente.
 - Las notas (`note`) se escriben en inglés, como el resto del código.
 
 ## Enmascarado

@@ -38,6 +38,7 @@ classDiagram
     +forward(value, context) String
     +reverse(value, context) String
     +requiredArgs() Set~String~
+    +infers() boolean
   }
   class ProfileReader {
     +fromClasspath(path) Profile
@@ -72,6 +73,10 @@ classDiagram
     +String value
     +String note
   }
+  class XmlDocumentAccessFactory {
+    <<interface>>
+    +create(message, rootPath) XmlDocumentAccess
+  }
 
   IsoBridge "1" o-- "1..*" Profile
   ProfileReader ..> Profile : valida y crea
@@ -103,6 +108,8 @@ Rombo relleno: composición. Rombo vacío: agregación. Línea punteada: depende
 | `Iso8583Message` | Interfaz | La implementa un adaptador por cada parser |
 | `MapIso8583Message` | Clase mutable de pruebas | Implementación en memoria de `Iso8583Message`; vive en `src/test` |
 | `XmlDocumentAccess` | Interfaz | Lee y escribe valores del XML por ruta; la implementa `isobridge-iso20022` |
+| `XmlDocumentAccessFactory` | Interfaz funcional | Crea el documento XML de cada conversión; la provee la aplicación |
+| `NoProfileException`, `RequiredFieldException` | Excepciones | Nombran el MTI o el campo que falló, nunca un valor |
 | `ConversionResult`, `ConversionReport`, `ReportEntry` | `record` | `ConversionResult<T>` es genérico: lleva un XML (`String`) o un `Iso8583Message` |
 | `Masking` | Clase final con métodos estáticos | Enmascara el PAN y los campos sensibles antes de guardarlos en el informe |
 
@@ -122,15 +129,15 @@ public enum ConversionDirection { ISO8583_TO_ISO20022, ISO20022_TO_ISO8583 }
 public final class IsoBridge {
     public static Builder builder();
     public ConversionResult<String> toIso20022(Iso8583Message message);
-    public ConversionResult<Iso8583Message> toIso8583(String xml);
+    // Fase 2: public ConversionResult<Iso8583Message> toIso8583(String xml);
 
     public static final class Builder {
         public Builder profile(Profile profile);
         public Builder converter(FieldConverter converter);
         public Builder clock(Clock clock);
         public Builder idGenerator(Supplier<String> idGenerator);
-        public Builder strict(boolean strict);
-        public Builder validateXsd(boolean validate);
+        public Builder xmlFactory(XmlDocumentAccessFactory factory);
+        public Builder reportValues(boolean reportValues);
         public IsoBridge build();
     }
 }
@@ -140,6 +147,7 @@ public interface FieldConverter {
     String forward(String value, ConversionContext context);
     String reverse(String value, ConversionContext context);
     default Set<String> requiredArgs() { return Set.of(); }
+    default boolean infers() { return false; }
 
     static FieldConverter of(String name, UnaryOperator<String> forward, UnaryOperator<String> reverse);
 }
@@ -228,6 +236,10 @@ public interface XmlDocumentAccess {
     String toXml();
 }
 
+public interface XmlDocumentAccessFactory {
+    XmlDocumentAccess create(String message, String rootPath);
+}
+
 public record Profile(
     String id,
     int version,
@@ -279,6 +291,10 @@ public final class DomXmlDocumentAccess implements XmlDocumentAccess {
     public void write(String path, String value);
     public String toXml();
 }
+
+public final class DomXmlDocumentAccessFactory implements XmlDocumentAccessFactory {
+    public XmlDocumentAccess create(String message, String rootPath);
+}
 ```
 
 `create` empieza un documento vacío para el XSD y el `target.root` del perfil, por ejemplo `/Document/FIToFICstmrCdtTrf`, y deja las rutas apuntando al último elemento. `parse(xml)` envuelve un XML existente y deja las rutas apuntando al elemento raíz del documento; `parse(xml, rootPath)` las apunta al mismo `target.root` del perfil. `write` crea los elementos que falten y los inserta en el orden que declara el XSD, y reutiliza el primero que ya exista con ese nombre: las rutas no distinguen repeticiones, porque un 0200 mapea una sola transacción.
@@ -286,3 +302,9 @@ public final class DomXmlDocumentAccess implements XmlDocumentAccess {
 `ConversionContext` da al conversor acceso de solo lectura a los demás campos del mensaje, a los argumentos declarados en el perfil (`args`) y al reloj. Lo necesita, por ejemplo, el conversor de monto para conocer la moneda.
 
 `presentFields()` permite al motor saber qué campos venían en el mensaje y no fueron mapeados, para reportarlos como `DROPPED`.
+
+`ForwardMappingEngine` (paquete `internal`) aplica un perfil en la ida: lee `mti` y los elementos, resuelve las rebanadas y los `args`, aplica el conversor, escribe `constants` y `generated`, recorre `never` sin leer su valor y cierra con los no mapeados. No guarda estado entre conversiones.
+
+`IsoBridge.Builder.build()` valida lo que depende del motor: dos perfiles con el mismo MTI o el mismo mensaje de destino, conversores desconocidos, perfiles con `unmapped: supplementary` y referencias a subcampos. Las dos últimas se rechazan mientras la fase 2 no las soporte, y el mensaje de error lo explica.
+
+Un conversor cuyo `infers()` devuelve `true` produce una entrada `INFERRED` en lugar de `MAPPED`, porque parte del valor no viene del origen. Lo hacen `mmddhhmmss-utc` y `local-date-time`.

@@ -54,6 +54,12 @@ public final class LocalDateTimeConverter implements FieldConverter {
     return "local-date-time";
   }
 
+  /** The century of the two-digit year is inferred from the clock. */
+  @Override
+  public boolean infers() {
+    return true;
+  }
+
   /** The {@code time} argument carries the local time this converter combines with its date. */
   @Override
   public Set<String> requiredArgs() {

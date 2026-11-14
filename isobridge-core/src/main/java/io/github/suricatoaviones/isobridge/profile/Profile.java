@@ -2,6 +2,8 @@ package io.github.suricatoaviones.isobridge.profile;
 
 import io.github.suricatoaviones.isobridge.ProfileException;
 import io.github.suricatoaviones.isobridge.convert.ConverterRegistry;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -51,7 +53,8 @@ public record Profile(
     fields = List.copyOf(Objects.requireNonNull(fields, "fields"));
     constants = List.copyOf(Objects.requireNonNull(constants, "constants"));
     generated = List.copyOf(Objects.requireNonNull(generated, "generated"));
-    Set<String> neverCopy = Set.copyOf(Objects.requireNonNull(never, "never"));
+    Set<String> neverCopy =
+        Collections.unmodifiableSet(new LinkedHashSet<>(Objects.requireNonNull(never, "never")));
     neverCopy.forEach(field -> {
       if (field.isBlank()) {
         throw new IllegalArgumentException("A never entry must not be blank");

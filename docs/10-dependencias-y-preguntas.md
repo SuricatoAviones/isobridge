@@ -50,6 +50,15 @@ Cada una bloquea la fase indicada. Se cierra editando el documento afectado.
 | ¿Las rutas y los códigos del perfil incluido coinciden con los XSD de `pacs.008.001.08` y `pacs.002.001.12`? Hay que revisar cada uno antes de darlo por bueno | Fase 1 | `05-perfil-incluido.md` |
 | ¿Cómo se representan los datos suplementarios para que la vuelta recupere los campos sin elemento propio? | Fase 2 | `05-perfil-incluido.md` |
 | ¿Cómo expresa el perfil un campo que escribe en dos elementos, como DE 39? | Fase 2 | `04-formato-del-perfil.md` |
+| ¿Cuándo se amplía `Iso8583Message` para exponer subcampos, como `de48.01`? Hasta entonces el puente rechaza esos perfiles | Fase 2 | `03-modelo-de-clases.md` |
 | ¿Permiten los términos de ISO 20022 redistribuir sus XSD dentro del JAR publicado? Se incluyen en el repositorio; falta confirmarlo antes de publicar | Fase 4 | Este |
 | ¿Se añade un segundo perfil con los mensajes de tarjetas de ISO 20022 (familia `cain`), que corresponden mejor a una autorización que pacs.008? | Después de la fase 2 | `05-perfil-incluido.md` |
 | ¿Nombre definitivo y coordenadas Maven? Comprobar que estén libres en Maven Central | Fase 4 | `AGENTS.md` |
+
+## Decisiones cerradas en la fase 1
+
+- La implementación de `XmlDocumentAccess` entra por una factoría obligatoria del `Builder` (`xmlFactory`), no por `ServiceLoader`: el núcleo sigue sin depender de `isobridge-iso20022` y las pruebas usan una implementación propia.
+- `unmapped: supplementary` y las referencias a subcampos se aplazan a la fase 2. El lector acepta la sintaxis, pero el puente rechaza el perfil al construirse con un mensaje que explica el motivo.
+- `FieldConverter.infers()` declara si la ida deduce parte del valor; el motor lo usa para emitir `INFERRED` sin conocer conversores concretos.
+- Los valores por defecto son `Clock.systemUTC()`, identificadores UUID y `now` como `Instant.toString()`. Todos se pueden sustituir en el `Builder` para que las pruebas sean deterministas.
+- `unmapped: fail` lanza `ConversionException` con el primer campo sin mapear; `unmapped: report` los marca `DROPPED` en orden de número.

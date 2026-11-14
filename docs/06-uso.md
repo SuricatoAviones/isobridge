@@ -10,6 +10,7 @@ Este documento define la API pública que el código debe ofrecer. Si al impleme
 IsoBridge bridge = IsoBridge.builder()
     .profile(Profile.fromClasspath("profiles/card-transfer-pacs008.yaml"))
     .clock(Clock.systemUTC())
+    .xmlFactory(new DomXmlDocumentAccessFactory())
     .build();
 
 Iso8583Message request = J8583Adapter.wrap(isoMessage);
@@ -21,9 +22,11 @@ if (report.hasLosses()) {
     log.warn("Conversion with losses: {}", report.summary());
 }
 
-// Sentido contrario
+// Sentido contrario (fase 2)
 ConversionResult<Iso8583Message> back = bridge.toIso8583(xml);
 ```
+
+La factoría XML es obligatoria: el núcleo no depende de `isobridge-iso20022`. En producción se usa `DomXmlDocumentAccessFactory`, que elige el XSD incluido por el tipo de mensaje; en pruebas, una implementación propia de `XmlDocumentAccessFactory`. `reportValues(true)` añade a cada entrada su valor enmascarado, y está desactivado por defecto.
 
 Con varios perfiles cargados, el puente elige el que coincide con el MTI del mensaje de entrada o con el tipo de mensaje del XML. Si ninguno coincide, lanza `NoProfileException`. Dos perfiles que coinciden con el mismo mensaje son un error de configuración y se detectan al construir el puente.
 

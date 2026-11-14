@@ -36,6 +36,16 @@ class FieldConverterTest {
   }
 
   @Test
+  void onlyConvertersThatInferPartOfTheValueSaySo() {
+    FieldConverter identity = FieldConverter.of("identity", value -> value, value -> value);
+
+    assertThat(identity.infers()).isFalse();
+    assertThat(new MmddhhmmssUtcConverter().infers()).isTrue();
+    assertThat(new LocalDateTimeConverter().infers()).isTrue();
+    assertThat(new CurrencyCodeConverter().infers()).isFalse();
+  }
+
+  @Test
   void factoryRejectsNullArguments() {
     assertThatThrownBy(() -> FieldConverter.of(null, String::toUpperCase, String::toLowerCase))
         .isInstanceOf(NullPointerException.class);

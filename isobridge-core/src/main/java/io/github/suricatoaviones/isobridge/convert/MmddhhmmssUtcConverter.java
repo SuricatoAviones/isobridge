@@ -56,6 +56,12 @@ public final class MmddhhmmssUtcConverter implements FieldConverter {
     return "mmddhhmmss-utc";
   }
 
+  /** The year is inferred from the clock because ISO 8583 carries only two digits. */
+  @Override
+  public boolean infers() {
+    return true;
+  }
+
   /**
    * Converts a {@code MMDDhhmmss} UTC timestamp into an ISO 8601 date-time, inferring the year.
    *

@@ -43,11 +43,11 @@ Cada flecha apunta al módulo del que se depende.
 ## Reglas de dependencia
 
 - `core` no importa Spring, j8583 ni ninguna librería de ISO 20022.
-- Los estándares entran por dos interfaces del núcleo: `Iso8583Message` para un lado y `XmlDocumentAccess` para el otro.
+- Los estándares entran por dos interfaces del núcleo: `Iso8583Message` para un lado y `XmlDocumentAccess` para el otro. `XmlDocumentAccessFactory` crea el documento de cada conversión sin que el núcleo conozca el XML.
 - El starter no contiene lógica de conversión; todo lo que hace se puede hacer con el constructor de Java puro.
 - Ningún módulo depende de `isobridge-samples`.
 
-`XmlDocumentAccess` es la interfaz con la que el motor lee y escribe valores en un documento XML por ruta, sin conocer la implementación. `isobridge-iso20022` la implementa sobre DOM.
+`XmlDocumentAccess` es la interfaz con la que el motor lee y escribe valores en un documento XML por ruta, sin conocer la implementación. `isobridge-iso20022` la implementa sobre DOM. `XmlDocumentAccessFactory` recibe el tipo de mensaje y la raíz del perfil y devuelve un documento vacío; el `Builder` de `IsoBridge` la exige, de modo que el núcleo no depende de `isobridge-iso20022`.
 
 ## Flujo de conversión
 
@@ -105,5 +105,5 @@ Paquetes dentro de `isobridge-core`, bajo `io.github.suricatoaviones.isobridge`:
 | `profile` | `Profile`, `FieldMapping`, `MessageSpec`, `Direction`, carga y validación del YAML |
 | `convert` | `FieldConverter`, registro de conversores y los conversores incluidos |
 | `report` | `ConversionReport`, `ReportEntry`, `Status`, enmascarado |
-| `message` | `Iso8583Message`, `XmlDocumentAccess` |
+| `message` | `Iso8583Message`, `XmlDocumentAccess`, `XmlDocumentAccessFactory` |
 | `internal` | Motor de mapeo; no es API pública |

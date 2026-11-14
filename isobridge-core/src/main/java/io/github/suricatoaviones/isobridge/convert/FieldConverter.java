@@ -52,6 +52,19 @@ public interface FieldConverter {
   }
 
   /**
+   * Whether the forward conversion infers part of the value, such as the year of a date that the
+   * source does not carry, instead of copying or transforming it completely.
+   *
+   * <p>The engine marks the report entry of an inferred value as {@code INFERRED}. The default is
+   * {@code false}; converters that infer part of their output override it.
+   *
+   * @return {@code true} when the forward value is partly inferred
+   */
+  default boolean infers() {
+    return false;
+  }
+
+  /**
    * Creates a converter from two value-only functions, for converters that need no context.
    *
    * <p>Example: {@code FieldConverter.of("upper-case", String::toUpperCase, String::toLowerCase)}.

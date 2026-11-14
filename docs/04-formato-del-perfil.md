@@ -69,17 +69,17 @@ unmapped: report   # report | fail | supplementary
 | `source.mti` | MTI que selecciona este perfil en la ida |
 | `target.message` | Tipo y versión del mensaje ISO 20022; selecciona este perfil en la vuelta |
 | `target.root` | Ruta base; las rutas de `to` son relativas a ella |
-| `from` | Campo ISO 8583: `mti`, `de4`, o un subcampo como `de3[0:2]` o `de48.01` |
+| `from` | Campo ISO 8583: `mti`, `de4` o una rebanada como `de3[0:2]`; el subcampo `de48.01` está definido pero el puente lo rechaza todavía |
 | `to` | Ruta relativa a `root`; `@Ccy` indica un atributo |
 | `convert` | Conversor por nombre; cada uno define su operación inversa |
-| `args` | Parámetros del conversor; pueden referirse a otro campo |
+| `args` | Parámetros del conversor; una cadena que sea una referencia de campo se resuelve con el mensaje de origen |
 | `required` | Si falta, la conversión falla en lugar de avisar |
 | `sensitive` | El valor se enmascara en el informe y en los registros |
 | `direction` | `both` por defecto, `forward` o `reverse` para campos de un solo sentido |
 | `constants` | Valores fijos que el destino exige y el origen no trae |
-| `generated` | Valores producidos al convertir: `message-id`, `now` |
+| `generated` | Valores producidos al convertir: `message-id` (generador inyectado) y `now` (instante del reloj inyectado) |
 | `never` | Campos que jamás se copian |
-| `unmapped` | Qué hacer con lo no mapeado: reportarlo, fallar o llevarlo a datos suplementarios |
+| `unmapped` | Qué hacer con lo no mapeado: `report` lo apunta como `DROPPED`, `fail` lanza `ConversionException`; `supplementary` se rechaza al construir el puente hasta la fase 2 |
 
 ## Sintaxis de `from`
 
@@ -97,6 +97,7 @@ Reglas:
 - Una referencia es el elemento completo, una rebanada o un subcampo, nunca dos a la vez.
 - El subcampo es numérico y se conserva tal cual, con sus ceros: `de48.01`.
 - `mti` no admite rebanadas ni subcampos.
+- El subcampo se puede escribir y el lector lo acepta, pero `IsoBridge` rechaza el perfil al construirse: `Iso8583Message` solo expone elementos completos. Se admitirá cuando un adaptador real necesite subcampos.
 
 ## Sintaxis de `to`
 
@@ -129,6 +130,10 @@ Detalles:
 - **`local-date-time`.** El campo propio es DE 13 en formato `MMDDYY` (convención de ISO 8583:1993; decisión del diseño, no estaba fijada) y la hora llega en `args.time` desde DE 12, en `hhmmss`. El siglo del año de dos dígitos se infiere con el reloj inyectado. La vuelta devuelve solo la parte de fecha: escribir la hora en su propio campo depende de cómo el perfil exprese un elemento que se escribe en dos campos, pregunta abierta de la fase 2.
 - **`pad-left`, `pad-right` y `trim`.** Los dos primeros exigen `args.length` y aceptan `args.pad` opcional, de un solo carácter: por defecto `0` en `pad-left` y espacio en `pad-right`. La vuelta elimina el carácter de relleno del lado correspondiente, de modo que el ida y vuelta pierde el relleno que el valor original llevara en ese lado. `trim` quita los espacios de ambos extremos en la ida y su vuelta es la identidad, porque no puede recuperarlos.
 - **`lookup`** recibe su tabla en `args.table` y un valor `args.default` opcional, que solo se aplica a la ida. La vuelta usa la tabla inversa: falla si el valor no está o si la inversa es ambigua, y entonces la vuelta necesita otra fuente para recuperar el valor original (ver `05-perfil-incluido.md`).
+- **`args` y referencias.** Una cadena de `args` con la forma de una referencia de `from` (`de49`, `de3[0:2]`, `mti`) se lee del mensaje de origen y se pasa al conversor con su valor; si el campo no está, el argumento no se pasa. Las demás cadenas son literales, y los números y booleanos se pasan tal cual. Una cadena que empiece por `de` y no sea una referencia válida se trata como literal, no como error.
+- **`generated`.** `message-id` llama al generador inyectado, que por defecto devuelve un UUID aleatorio; un valor nulo o en blanco detiene la conversión. `now` escribe `Clock.instant().toString()` del reloj inyectado, en ISO 8601 con `Z`.
+- **`never`.** El motor no lee esos campos del mensaje. Si vienen, el informe los marca `EXCLUDED` y sin valor; si no vienen, no hay entrada. Un campo no puede estar a la vez en `fields` y en `never`.
+- **`unmapped`.** `report` añade una entrada `DROPPED` por cada campo presente sin mapeo, en orden de número. `fail` lanza `ConversionException` con el primero de ellos. `supplementary` se rechaza al construir el puente hasta que la fase 2 fije el formato de los datos suplementarios.
 
 ## Validación al cargar
 
@@ -141,6 +146,13 @@ Un perfil se valida al cargarlo. Se reportan, con línea y motivo:
 - Dos mapeos que escriben en la misma ruta `to`.
 - Un campo presente a la vez en `fields` y en `never`.
 - `unmapped` con un valor fuera de `report`, `fail`, `supplementary`.
+
+Al construir el puente se valida además lo que depende de los conversores registrados en el `Builder` y de lo que el motor sabe hacer:
+
+- Conversores desconocidos, contando los que la aplicación registra en el `Builder`.
+- Dos perfiles con el mismo MTI o con el mismo tipo de mensaje ISO 20022 de destino.
+- Perfiles con `unmapped: supplementary`, hasta que la fase 2 defina el formato.
+- Referencias con subcampo, hasta que `Iso8583Message` los exponga.
 
 Si el perfil es inválido, se lanza `ProfileException` y el puente no se construye. Se reportan todos los errores encontrados, no solo el primero.
 
