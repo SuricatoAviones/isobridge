@@ -268,6 +268,21 @@ public record MessageSpec(
 }
 ```
 
+## Módulo `isobridge-iso20022`
+
+```java
+public final class DomXmlDocumentAccess implements XmlDocumentAccess {
+    public static DomXmlDocumentAccess create(String schemaResource, String rootPath);
+    public static DomXmlDocumentAccess parse(String xml);
+    public static DomXmlDocumentAccess parse(String xml, String rootPath);
+    public Optional<String> read(String path);
+    public void write(String path, String value);
+    public String toXml();
+}
+```
+
+`create` empieza un documento vacío para el XSD y el `target.root` del perfil, por ejemplo `/Document/FIToFICstmrCdtTrf`, y deja las rutas apuntando al último elemento. `parse(xml)` envuelve un XML existente y deja las rutas apuntando al elemento raíz del documento; `parse(xml, rootPath)` las apunta al mismo `target.root` del perfil. `write` crea los elementos que falten y los inserta en el orden que declara el XSD, y reutiliza el primero que ya exista con ese nombre: las rutas no distinguen repeticiones, porque un 0200 mapea una sola transacción.
+
 `ConversionContext` da al conversor acceso de solo lectura a los demás campos del mensaje, a los argumentos declarados en el perfil (`args`) y al reloj. Lo necesita, por ejemplo, el conversor de monto para conocer la moneda.
 
 `presentFields()` permite al motor saber qué campos venían en el mensaje y no fueron mapeados, para reportarlos como `DROPPED`.

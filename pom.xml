@@ -22,6 +22,7 @@
 
   <modules>
     <module>isobridge-core</module>
+    <module>isobridge-iso20022</module>
   </modules>
 
   <properties>

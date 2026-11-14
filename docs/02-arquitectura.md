@@ -70,9 +70,16 @@ flowchart LR
 
 ## Orden de los elementos XML
 
-Los XSD de ISO 20022 exigen que los elementos aparezcan en un orden fijo. El perfil declara los mapeos en cualquier orden, así que quien escribe el XML debe ordenarlos. El diseño actual: `isobridge-iso20022` carga el XSD una vez al iniciar, extrae el orden de los elementos y lo aplica al escribir.
+Los XSD de ISO 20022 exigen que los elementos aparezcan en un orden fijo. El perfil declara los mapeos en cualquier orden, así que quien escribe el XML debe ordenarlos. `isobridge-iso20022` incluye los esquemas que necesita, extrae de cada uno el orden y el tipo de sus elementos (`SchemaModel`, una sola vez por recurso de classpath) y los aplica al escribir (`DomXmlDocumentAccess`). La alternativa de escribir sobre las clases de Prowide quedó descartada: añadía una dependencia grande y el orden seguía siendo responsabilidad nuestra.
 
-La alternativa, escribir sobre las clases de Prowide ISO 20022, está registrada como pregunta abierta en `10-dependencias-y-preguntas.md`.
+Los esquemas se guardan sin modificar en `isobridge-iso20022/src/main/resources/iso20022/`:
+
+| Fichero | Mensaje | Origen | SHA-256 |
+| --- | --- | --- | --- |
+| `pacs.008.001.08.xsd` | `FIToFICstmrCdtTrf` | <https://www.iso20022.org/sites/default/files/documents/messages/pacs/schemas/pacs.008.001.08.xsd> | `cf048155f70cacd03f1f1dfadf66cba8752be93c249c267351782fd6adb023f7` |
+| `pacs.002.001.12.xsd` | `FIToFIPmtStsRpt` | <https://www.iso20022.org/sites/default/files/documents/messages/pacs/schemas/pacs.002.001.12.xsd> | `c6ec04854583d87506ca9baa02c27a50001c3518ad46ca6892da1d515e074a0a` |
+
+Ambos se descargaron el 13 de noviembre de 2026 y son autocontenidos: no importan ni incluyen otros esquemas. Del XSD solo se leen la estructura de elementos y sus tipos; las restricciones, los atributos y los tipos simples se usarán para validar en la fase 2.
 
 ## Estructura del repositorio
 

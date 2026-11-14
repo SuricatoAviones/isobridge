@@ -13,6 +13,7 @@ La licencia del proyecto es Apache 2.0, la habitual en librerías Java y la mism
 | SnakeYAML | Lectura de perfiles | `isobridge-core` | Apache 2.0 |
 | Spring Boot | Autoconfiguración | Solo el starter | Apache 2.0 |
 | JUnit, AssertJ, XMLUnit | Pruebas | Todos, solo en pruebas | JUnit: EPL 2.0; AssertJ y XMLUnit: Apache 2.0 |
+| XSD de `pacs.008.001.08` y `pacs.002.001.12` | Orden de los elementos y validación | `isobridge-iso20022`, como recurso | Estándar ISO 20022, sin cabecera de licencia; procedencia y fecha en `02-arquitectura.md` |
 
 El núcleo define su propia interfaz mínima de mensaje ISO 8583 (`Iso8583Message`), de modo que j8583 es un adaptador y no una dependencia obligatoria. Quien use otro parser escribe un adaptador de pocas líneas.
 
@@ -46,10 +47,9 @@ Cada una bloquea la fase indicada. Se cierra editando el documento afectado.
 | Pregunta | Bloquea | Documento afectado |
 | --- | --- | --- |
 | ¿Es compatible con Apache 2.0 la licencia de j8583? (SnakeYAML quedó confirmada: Apache 2.0) | Fase 2 | Este |
-| ¿Se pueden incluir los XSD de ISO 20022 en el repositorio o deben descargarse al construir? | Fase 1 | `02-arquitectura.md` |
-| ¿Qué versión de pacs.008 y pacs.002 usa el perfil incluido? Hay que revisar cada ruta contra su XSD | Fase 1 | `05-perfil-incluido.md` |
+| ¿Las rutas y los códigos del perfil incluido coinciden con los XSD de `pacs.008.001.08` y `pacs.002.001.12`? Hay que revisar cada uno antes de darlo por bueno | Fase 1 | `05-perfil-incluido.md` |
 | ¿Cómo se representan los datos suplementarios para que la vuelta recupere los campos sin elemento propio? | Fase 2 | `05-perfil-incluido.md` |
 | ¿Cómo expresa el perfil un campo que escribe en dos elementos, como DE 39? | Fase 2 | `04-formato-del-perfil.md` |
-| ¿La escritura del XML va sobre DOM ordenado por el XSD o sobre las clases de Prowide? | Fase 1 | `02-arquitectura.md` |
+| ¿Permiten los términos de ISO 20022 redistribuir sus XSD dentro del JAR publicado? Se incluyen en el repositorio; falta confirmarlo antes de publicar | Fase 4 | Este |
 | ¿Se añade un segundo perfil con los mensajes de tarjetas de ISO 20022 (familia `cain`), que corresponden mejor a una autorización que pacs.008? | Después de la fase 2 | `05-perfil-incluido.md` |
 | ¿Nombre definitivo y coordenadas Maven? Comprobar que estén libres en Maven Central | Fase 4 | `AGENTS.md` |
