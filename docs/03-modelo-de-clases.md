@@ -12,18 +12,25 @@ classDiagram
   class Profile {
     +String id
     +int version
+    +Optional~String~ description
     +MessageSpec source
     +MessageSpec target
     +fromClasspath(path) Profile
     +fields() List~FieldMapping~
+    +constants() List~Constant~
+    +generated() List~Generated~
+    +never() Set~String~
+    +unmapped() Unmapped
   }
   class FieldMapping {
     +String id
     +String from
     +String to
+    +Direction direction
     +boolean required
     +boolean sensitive
-    +Direction direction
+    +Optional~String~ convert
+    +Map args
   }
   class FieldConverter {
     <<interface>>
@@ -73,7 +80,7 @@ Rombo relleno: composición. Rombo vacío: agregación. Línea punteada: depende
 | Tipo | Naturaleza | Nota |
 | --- | --- | --- |
 | `IsoBridge` | Clase final inmutable | Se construye con un `Builder`; segura entre hilos |
-| `Profile`, `FieldMapping`, `MessageSpec` | `record` | Se crean al leer el YAML, ya validados |
+| `Profile` (con `Constant`, `Generated` y `Unmapped` anidados), `FieldMapping`, `MessageSpec` | `record` | Se crean al leer el YAML, ya validados; inmutables y con igualdad por valor |
 | `FieldConverter` | Interfaz | Punto de extensión; los incluidos se registran por nombre |
 | `ConversionContext` | Interfaz | La implementa el motor: reloj, otros campos del mensaje y `args` |
 | `ConverterRegistry` | Clase final inmutable | Conversores indexados por nombre; `withBuiltIns()` trae los incluidos |
@@ -137,6 +144,43 @@ public interface Iso8583Message {
     Optional<String> field(int number);
     void setField(int number, String value);
     Set<Integer> presentFields();
+}
+
+public record Profile(
+    String id,
+    int version,
+    Optional<String> description,
+    MessageSpec source,
+    MessageSpec target,
+    List<FieldMapping> fields,
+    List<Constant> constants,
+    List<Generated> generated,
+    Set<String> never,
+    Unmapped unmapped) {
+
+    public record Constant(String to, String value) {}
+    public record Generated(String to, String with) {}
+    public enum Unmapped { REPORT, FAIL, SUPPLEMENTARY }
+}
+
+public record FieldMapping(
+    String id,
+    String from,
+    String to,
+    Direction direction,
+    boolean required,
+    boolean sensitive,
+    Optional<String> convert,
+    Map<String, Object> args) {}
+
+public record MessageSpec(
+    String standard,
+    Optional<String> mti,
+    Optional<String> message,
+    Optional<String> root) {
+
+    public static MessageSpec iso8583(String mti);
+    public static MessageSpec iso20022(String message, String root);
 }
 ```
 
