@@ -10,7 +10,7 @@ La licencia del proyecto es Apache 2.0, la habitual en librerías Java y la mism
 | --- | --- | --- | --- |
 | [j8583](https://sourceforge.net/projects/j8583/) | Parseo de ISO 8583 | `isobridge-j8583`, opcional | Por confirmar |
 | [Prowide ISO 20022](https://github.com/prowide/prowide-iso20022) | Modelo Java de los mensajes, como adaptador opcional futuro | Ninguno por ahora | Apache 2.0 |
-| SnakeYAML | Lectura de perfiles | `isobridge-core` | Por confirmar |
+| SnakeYAML | Lectura de perfiles | `isobridge-core` | Apache 2.0 |
 | Spring Boot | Autoconfiguración | Solo el starter | Apache 2.0 |
 | JUnit, AssertJ, XMLUnit | Pruebas | Todos, solo en pruebas | JUnit: EPL 2.0; AssertJ y XMLUnit: Apache 2.0 |
 
@@ -45,7 +45,7 @@ Cada una bloquea la fase indicada. Se cierra editando el documento afectado.
 
 | Pregunta | Bloquea | Documento afectado |
 | --- | --- | --- |
-| ¿Son compatibles con Apache 2.0 las licencias de j8583 y SnakeYAML? | SnakeYAML: fase 1. j8583: fase 2 | Este |
+| ¿Es compatible con Apache 2.0 la licencia de j8583? (SnakeYAML quedó confirmada: Apache 2.0) | Fase 2 | Este |
 | ¿Se pueden incluir los XSD de ISO 20022 en el repositorio o deben descargarse al construir? | Fase 1 | `02-arquitectura.md` |
 | ¿Qué versión de pacs.008 y pacs.002 usa el perfil incluido? Hay que revisar cada ruta contra su XSD | Fase 1 | `05-perfil-incluido.md` |
 | ¿Cómo se representan los datos suplementarios para que la vuelta recupere los campos sin elemento propio? | Fase 2 | `05-perfil-incluido.md` |
