@@ -22,11 +22,20 @@ public final class ConverterRegistry {
   }
 
   /**
-   * Creates a registry with the converters included in the library. Today that is {@code
-   * currency-code}; the converters of phase 1 join as they are implemented.
+   * Creates a registry with the converters included in the library: {@code currency-code}, {@code
+   * minor-units}, {@code mmddhhmmss-utc}, {@code local-date-time}, {@code pad-left}, {@code
+   * pad-right}, {@code trim} and {@code lookup}.
    */
   public static ConverterRegistry withBuiltIns() {
-    return empty().register(new CurrencyCodeConverter());
+    return empty()
+        .register(new CurrencyCodeConverter())
+        .register(new MinorUnitsConverter())
+        .register(new MmddhhmmssUtcConverter())
+        .register(new LocalDateTimeConverter())
+        .register(new PadLeftConverter())
+        .register(new PadRightConverter())
+        .register(new TrimConverter())
+        .register(new LookupConverter());
   }
 
   /** Creates a registry with no converters. */

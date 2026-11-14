@@ -14,6 +14,13 @@ class ConverterRegistryTest {
     ConverterRegistry registry = ConverterRegistry.withBuiltIns();
 
     assertThat(registry.byName("currency-code")).isPresent();
+    assertThat(registry.byName("minor-units")).isPresent();
+    assertThat(registry.byName("mmddhhmmss-utc")).isPresent();
+    assertThat(registry.byName("local-date-time")).isPresent();
+    assertThat(registry.byName("pad-left")).isPresent();
+    assertThat(registry.byName("pad-right")).isPresent();
+    assertThat(registry.byName("trim")).isPresent();
+    assertThat(registry.byName("lookup")).isPresent();
   }
 
   @Test
@@ -30,21 +37,21 @@ class ConverterRegistryTest {
 
   @Test
   void registersUserConvertersWithoutChangingTheSourceRegistry() {
-    FieldConverter trim = FieldConverter.of("trim", String::trim, String::trim);
-    ConverterRegistry registry = ConverterRegistry.withBuiltIns().register(trim);
+    FieldConverter shout = FieldConverter.of("shout", String::toUpperCase, String::toLowerCase);
+    ConverterRegistry registry = ConverterRegistry.withBuiltIns().register(shout);
 
-    assertThat(registry.byName("trim")).containsSame(trim);
-    assertThat(ConverterRegistry.withBuiltIns().byName("trim")).isEmpty();
+    assertThat(registry.byName("shout")).containsSame(shout);
+    assertThat(ConverterRegistry.withBuiltIns().byName("shout")).isEmpty();
   }
 
   @Test
   void rejectsANameAlreadyRegistered() {
-    FieldConverter trim = FieldConverter.of("trim", String::trim, String::trim);
-    FieldConverter strip = FieldConverter.of("trim", String::strip, String::strip);
+    FieldConverter shout = FieldConverter.of("shout", String::toUpperCase, String::toLowerCase);
+    FieldConverter scream = FieldConverter.of("shout", String::toUpperCase, String::toLowerCase);
 
-    assertThatThrownBy(() -> ConverterRegistry.withBuiltIns().register(trim).register(strip))
+    assertThatThrownBy(() -> ConverterRegistry.withBuiltIns().register(shout).register(scream))
         .isInstanceOf(IsoBridgeException.class)
-        .hasMessageContaining("trim");
+        .hasMessageContaining("shout");
   }
 
   @Test
