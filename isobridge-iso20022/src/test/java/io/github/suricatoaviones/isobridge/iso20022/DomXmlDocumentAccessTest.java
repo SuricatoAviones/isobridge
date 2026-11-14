@@ -118,6 +118,62 @@ class DomXmlDocumentAccessTest {
   }
 
   @Test
+  void readsTheFirstOfSeveralRepeatedElements() {
+    String xml =
+        "<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\">"
+            + "<FIToFICstmrCdtTrf>"
+            + "<CdtTrfTxInf><PmtId><InstrId>INSTR-1</InstrId></PmtId></CdtTrfTxInf>"
+            + "<CdtTrfTxInf><PmtId><InstrId>INSTR-2</InstrId></PmtId></CdtTrfTxInf>"
+            + "</FIToFICstmrCdtTrf></Document>";
+
+    DomXmlDocumentAccess document = DomXmlDocumentAccess.parse(xml, PACS_008);
+
+    assertThat(document.read("CdtTrfTxInf/PmtId/InstrId")).contains("INSTR-1");
+  }
+
+  @Test
+  void doesNotMixElementsOfAnotherNamespace() {
+    String xml =
+        "<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\">"
+            + "<FIToFICstmrCdtTrf xmlns:other=\"urn:example:other\">"
+            + "<other:GrpHdr><other:MsgId>MSG-1</other:MsgId></other:GrpHdr>"
+            + "</FIToFICstmrCdtTrf></Document>";
+
+    DomXmlDocumentAccess document = DomXmlDocumentAccess.parse(xml, PACS_008);
+
+    assertThat(document.read("GrpHdr/MsgId")).isEmpty();
+  }
+
+  @Test
+  void reportsAnXmlWhoseDocumentElementIsNotTheRootOfThePath() {
+    String xml = "<FIToFICstmrCdtTrf/>";
+
+    assertThatThrownBy(() -> DomXmlDocumentAccess.parse(xml, PACS_008))
+        .isInstanceOf(ConversionException.class)
+        .hasMessageContaining("root element")
+        .hasMessageContaining("Document");
+  }
+
+  @Test
+  void reportsAPathThatTheXmlDoesNotHave() {
+    String xml =
+        "<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\">"
+            + "<FIToFICstmrCdtTrf><GrpHdr/></FIToFICstmrCdtTrf></Document>";
+
+    assertThatThrownBy(
+            () -> DomXmlDocumentAccess.parse(xml, "/Document/FIToFICstmrCdtTrf/CdtTrfTxInf"))
+        .isInstanceOf(ConversionException.class)
+        .hasMessageContaining("/Document/FIToFICstmrCdtTrf/CdtTrfTxInf");
+  }
+
+  @Test
+  void reportsMalformedXml() {
+    assertThatThrownBy(() -> DomXmlDocumentAccess.parse("<Document>"))
+        .isInstanceOf(ConversionException.class)
+        .hasMessageContaining("Cannot read the XML");
+  }
+
+  @Test
   void theOutputUsesTheNamespaceOfTheSchema() {
     String xml = pacs008().toXml();
 
