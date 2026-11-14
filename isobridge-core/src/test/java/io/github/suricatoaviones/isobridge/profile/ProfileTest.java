@@ -78,7 +78,7 @@ class ProfileTest {
             1,
             Optional.empty(),
             MessageSpec.iso8583("0210"),
-            MessageSpec.iso20022("pacs.002.001.12", "/Document/FIToFICstmrPmtStsRpt"),
+            MessageSpec.iso20022("pacs.002.001.12", "/Document/FIToFIPmtStsRpt"),
             List.of(),
             List.of(),
             List.of(),

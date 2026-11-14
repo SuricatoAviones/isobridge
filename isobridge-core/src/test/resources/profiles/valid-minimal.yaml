@@ -6,7 +6,7 @@ source:
 target:
   standard: iso20022
   message: pacs.002.001.12
-  root: /Document/FIToFICstmrPmtStsRpt
+  root: /Document/FIToFIPmtStsRpt
 fields:
   - id: stan
     from: de11

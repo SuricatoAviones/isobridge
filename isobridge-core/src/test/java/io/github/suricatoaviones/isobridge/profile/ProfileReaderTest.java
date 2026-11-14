@@ -73,6 +73,7 @@ class ProfileReaderTest {
     assertThat(profile.generated()).isEmpty();
     assertThat(profile.never()).isEmpty();
     assertThat(profile.unmapped()).isEqualTo(Profile.Unmapped.REPORT);
+    assertThat(profile.target().root()).contains("/Document/FIToFIPmtStsRpt");
   }
 
   @Test
