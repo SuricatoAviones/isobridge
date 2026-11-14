@@ -37,6 +37,11 @@ classDiagram
     +name() String
     +forward(value, context) String
     +reverse(value, context) String
+    +requiredArgs() Set~String~
+  }
+  class ProfileReader {
+    +fromClasspath(path) Profile
+    +fromString(source, yaml) Profile
   }
   class Iso8583Message {
     <<interface>>
@@ -63,6 +68,7 @@ classDiagram
   }
 
   IsoBridge "1" o-- "1..*" Profile
+  ProfileReader ..> Profile : valida y crea
   Profile "1" *-- "*" FieldMapping
   FieldMapping --> FieldConverter : usa
   IsoBridge ..> Iso8583Message : convierte
@@ -81,6 +87,8 @@ Rombo relleno: composición. Rombo vacío: agregación. Línea punteada: depende
 | --- | --- | --- |
 | `IsoBridge` | Clase final inmutable | Se construye con un `Builder`; segura entre hilos |
 | `Profile` (con `Constant`, `Generated` y `Unmapped` anidados), `FieldMapping`, `MessageSpec` | `record` | Se crean al leer el YAML, ya validados; inmutables y con igualdad por valor |
+| `ProfileReader` | Clase final inmutable | Lee y valida el YAML; recibe el `ConverterRegistry` con el que comprueba los nombres de conversor |
+| `ProfileException` | Excepción final | Lleva todos los errores de la carga, cada uno con su línea y su motivo |
 | `FieldConverter` | Interfaz | Punto de extensión; los incluidos se registran por nombre |
 | `ConversionContext` | Interfaz | La implementa el motor: reloj, otros campos del mensaje y `args` |
 | `ConverterRegistry` | Clase final inmutable | Conversores indexados por nombre; `withBuiltIns()` trae los incluidos |
@@ -122,6 +130,7 @@ public interface FieldConverter {
     String name();
     String forward(String value, ConversionContext context);
     String reverse(String value, ConversionContext context);
+    default Set<String> requiredArgs() { return Set.of(); }
 
     static FieldConverter of(String name, UnaryOperator<String> forward, UnaryOperator<String> reverse);
 }
@@ -137,6 +146,17 @@ public final class ConverterRegistry {
     public static ConverterRegistry withBuiltIns();
     public ConverterRegistry register(FieldConverter converter);
     public Optional<FieldConverter> byName(String name);
+}
+
+public final class ProfileReader {
+    public ProfileReader(ConverterRegistry registry);
+    public Profile fromClasspath(String path);
+    public Profile fromString(String source, String yaml);
+}
+
+public final class ProfileException extends IsoBridgeException {
+    public List<Error> errors();
+    public record Error(int line, String reason) {}
 }
 
 public interface Iso8583Message {
@@ -161,6 +181,8 @@ public record Profile(
     public record Constant(String to, String value) {}
     public record Generated(String to, String with) {}
     public enum Unmapped { REPORT, FAIL, SUPPLEMENTARY }
+
+    public static Profile fromClasspath(String path);
 }
 
 public record FieldMapping(

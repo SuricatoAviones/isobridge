@@ -1,6 +1,7 @@
 package io.github.suricatoaviones.isobridge.convert;
 
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.UnaryOperator;
 
 /**
@@ -40,6 +41,15 @@ public interface FieldConverter {
    * @return the value to write in the target field
    */
   String reverse(String value, ConversionContext context);
+
+  /**
+   * Returns the names of the arguments this converter requires in the profile, empty when it needs
+   * none. The reader validates at load time that every required argument is declared; converters
+   * still fail with a clear message when an argument is missing at conversion time.
+   */
+  default Set<String> requiredArgs() {
+    return Set.of();
+  }
 
   /**
    * Creates a converter from two value-only functions, for converters that need no context.

@@ -104,7 +104,7 @@ unmapped: report   # report | fail | supplementary
 | `minor-units` | `000000012550` con moneda de 2 decimales pasa a `125.50` | Multiplica y rellena con ceros a 12 dígitos |
 | `currency-code` | Código numérico ISO 4217 (`840`) a alfabético (`USD`) | Alfabético a numérico |
 | `mmddhhmmss-utc` | Fecha sin año a fecha y hora ISO 8601, con el año inferido | Recorta a `MMDDhhmmss` |
-| `local-date-time` | Combina `de13` y `de12` en una fecha y hora local | Separa en dos campos |
+| `local-date-time` | Combina `de13` y `de12` en una fecha y hora local | Devuelve la fecha; la hora depende de una pregunta abierta de la fase 2 |
 | `pad-left`, `pad-right`, `trim` | Ajuste de longitud y relleno | Operación contraria |
 | `lookup` | Traduce por tabla, por ejemplo códigos de respuesta | Tabla inversa, si es unívoca |
 
@@ -135,3 +135,5 @@ Si el perfil es inválido, se lanza `ProfileException` y el puente no se constru
 ## Seguridad del YAML
 
 El lector de YAML se configura para aceptar solo tipos básicos (mapas, listas, cadenas, números, booleanos). No se permite instanciar clases arbitrarias desde el archivo.
+
+La implementación no construye objetos a partir del YAML: compone el documento con SnakeYAML y lo recorre a mano, guardando la línea de cada nodo. SnakeYAML rechaza los tags globales (`!!java.lang.Integer` y similares) y el lector rechaza cualquier tag que no sea de tipo básico, así que la construcción de clases desde el perfil es imposible. Las claves duplicadas y los errores de sintaxis se reportan también con su línea.

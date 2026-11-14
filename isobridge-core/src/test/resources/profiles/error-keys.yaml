@@ -1,0 +1,12 @@
+profile: bad
+version: one
+target:
+  standard: iso20022
+  message: pacs.008.001.08
+  root: /Document/FIToFICstmrCdtTrf
+fields:
+  - id: only
+    from: de4
+    to: CdtTrfTxInf/IntrBkSttlmAmt
+unmapped: ignore
+extra: nope

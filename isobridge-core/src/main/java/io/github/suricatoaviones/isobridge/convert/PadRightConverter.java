@@ -2,6 +2,7 @@ package io.github.suricatoaviones.isobridge.convert;
 
 import io.github.suricatoaviones.isobridge.ConversionException;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Pads a value on the right up to a fixed length, and removes the padding on the way back.
@@ -30,6 +31,12 @@ public final class PadRightConverter implements FieldConverter {
   @Override
   public String name() {
     return "pad-right";
+  }
+
+  /** The {@code length} argument sets the target length of the padding. */
+  @Override
+  public Set<String> requiredArgs() {
+    return Set.of("length");
   }
 
   /**

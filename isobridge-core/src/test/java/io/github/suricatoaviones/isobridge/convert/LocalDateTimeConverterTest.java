@@ -103,6 +103,11 @@ class LocalDateTimeConverterTest {
   }
 
   @Test
+  void declaresTheArgumentsItRequires() {
+    assertThat(converter.requiredArgs()).containsExactly("time");
+  }
+
+  @Test
   void rejectsNullValues() {
     assertThatThrownBy(() -> converter.forward(null, contextWithTime("120000")))
         .isInstanceOf(NullPointerException.class);

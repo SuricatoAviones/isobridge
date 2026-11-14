@@ -1,0 +1,23 @@
+profile: bad
+version: 1
+source:
+  standard: iso8583
+  mti: "0200"
+target:
+  standard: iso20022
+  message: pacs.008.001.08
+  root: /Document/FIToFICstmrCdtTrf
+fields:
+  - id: amount
+    from: de4
+    to: CdtTrfTxInf/IntrBkSttlmAmt
+    convert: minor-units
+  - id: amount
+    from: de49
+    to: CdtTrfTxInf/IntrBkSttlmAmt/@Ccy
+  - id: currency
+    from: de49
+    to: CdtTrfTxInf/IntrBkSttlmAmt
+    direction: sideways
+never:
+  - de4

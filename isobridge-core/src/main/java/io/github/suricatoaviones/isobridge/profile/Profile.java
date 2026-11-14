@@ -1,5 +1,7 @@
 package io.github.suricatoaviones.isobridge.profile;
 
+import io.github.suricatoaviones.isobridge.ProfileException;
+import io.github.suricatoaviones.isobridge.convert.ConverterRegistry;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -56,6 +58,19 @@ public record Profile(
       }
     });
     never = neverCopy;
+  }
+
+  /**
+   * Loads and validates the profile at the given classpath location, checking converter names
+   * against the built-in converters. Profiles that use custom converters are loaded with a {@link
+   * ProfileReader} created around the registry that knows them.
+   *
+   * @param path the classpath location, such as {@code "profiles/card-transfer-pacs008.yaml"}
+   * @return the validated profile
+   * @throws ProfileException when the location does not exist or the profile is invalid
+   */
+  public static Profile fromClasspath(String path) {
+    return new ProfileReader(ConverterRegistry.withBuiltIns()).fromClasspath(path);
   }
 
   /**

@@ -11,6 +11,7 @@ import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
 import java.time.temporal.ChronoField;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Combines the local date of ISO 8583 (DE 13, {@code MMDDYY}) with the local time (DE 12, {@code
@@ -51,6 +52,12 @@ public final class LocalDateTimeConverter implements FieldConverter {
   @Override
   public String name() {
     return "local-date-time";
+  }
+
+  /** The {@code time} argument carries the local time this converter combines with its date. */
+  @Override
+  public Set<String> requiredArgs() {
+    return Set.of("time");
   }
 
   /**

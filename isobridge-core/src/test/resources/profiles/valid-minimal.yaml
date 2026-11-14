@@ -1,0 +1,16 @@
+profile: minimal
+version: 1
+source:
+  standard: iso8583
+  mti: "0210"
+target:
+  standard: iso20022
+  message: pacs.002.001.12
+  root: /Document/FIToFICstmrPmtStsRpt
+fields:
+  - id: stan
+    from: de11
+    to: TxInfAndSts/OrgnlInstrId
+constants:
+  - to: GrpHdr/NbOfTxs
+    value: 1

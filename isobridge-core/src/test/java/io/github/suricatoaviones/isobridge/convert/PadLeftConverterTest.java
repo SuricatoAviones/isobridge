@@ -118,6 +118,11 @@ class PadLeftConverterTest {
   }
 
   @Test
+  void declaresTheArgumentsItRequires() {
+    assertThat(converter.requiredArgs()).containsExactly("length");
+  }
+
+  @Test
   void rejectsNullValues() {
     assertThatThrownBy(() -> converter.forward(null, withLength(12)))
         .isInstanceOf(NullPointerException.class);

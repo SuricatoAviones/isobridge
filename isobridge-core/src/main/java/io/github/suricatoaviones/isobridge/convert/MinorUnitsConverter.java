@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.TreeMap;
 
 /**
@@ -46,6 +47,12 @@ public final class MinorUnitsConverter implements FieldConverter {
   @Override
   public String name() {
     return "minor-units";
+  }
+
+  /** The {@code currency} argument tells this converter how many decimals the currency has. */
+  @Override
+  public Set<String> requiredArgs() {
+    return Set.of("currency");
   }
 
   /**

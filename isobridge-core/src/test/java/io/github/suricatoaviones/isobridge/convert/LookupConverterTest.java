@@ -105,6 +105,11 @@ class LookupConverterTest {
   }
 
   @Test
+  void declaresTheArgumentsItRequires() {
+    assertThat(converter.requiredArgs()).containsExactly("table");
+  }
+
+  @Test
   void rejectsNullValues() {
     assertThatThrownBy(() -> converter.forward(null, withTable(responseCodes)))
         .isInstanceOf(NullPointerException.class);

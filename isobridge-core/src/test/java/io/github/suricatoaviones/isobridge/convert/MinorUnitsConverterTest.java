@@ -131,6 +131,11 @@ class MinorUnitsConverterTest {
   }
 
   @Test
+  void declaresTheArgumentsItRequires() {
+    assertThat(converter.requiredArgs()).containsExactly("currency");
+  }
+
+  @Test
   void rejectsNullValues() {
     assertThatThrownBy(() -> converter.forward(null, contextWithCurrency("840")))
         .isInstanceOf(NullPointerException.class);

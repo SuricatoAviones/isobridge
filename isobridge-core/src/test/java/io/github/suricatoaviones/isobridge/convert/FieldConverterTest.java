@@ -29,6 +29,13 @@ class FieldConverterTest {
   }
 
   @Test
+  void factoryConvertersRequireNoArguments() {
+    FieldConverter identity = FieldConverter.of("identity", value -> value, value -> value);
+
+    assertThat(identity.requiredArgs()).isEmpty();
+  }
+
+  @Test
   void factoryRejectsNullArguments() {
     assertThatThrownBy(() -> FieldConverter.of(null, String::toUpperCase, String::toLowerCase))
         .isInstanceOf(NullPointerException.class);

@@ -3,6 +3,7 @@ package io.github.suricatoaviones.isobridge.convert;
 import io.github.suricatoaviones.isobridge.ConversionException;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.TreeMap;
 
 /**
@@ -30,6 +31,12 @@ public final class LookupConverter implements FieldConverter {
   @Override
   public String name() {
     return "lookup";
+  }
+
+  /** The {@code table} argument carries the translation table. */
+  @Override
+  public Set<String> requiredArgs() {
+    return Set.of("table");
   }
 
   /**
