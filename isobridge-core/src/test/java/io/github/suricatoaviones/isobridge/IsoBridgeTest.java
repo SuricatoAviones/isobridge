@@ -114,6 +114,32 @@ class IsoBridgeTest {
   }
 
   @Test
+  void doesNotReportFieldsUsedOnlyAsConverterArgumentsAsDropped() {
+    RecordingXmlDocumentAccess xml = new RecordingXmlDocumentAccess();
+    FieldMapping acceptance =
+        new FieldMapping(
+            "acceptance",
+            "de13",
+            "CdtTrfTxInf/AccptncDtTm",
+            Direction.BOTH,
+            false,
+            false,
+            Optional.of("local-date-time"),
+            Map.of("time", "de12"));
+    Profile profile = profile("arguments", "0200", Profile.Unmapped.REPORT, List.of(acceptance));
+    IsoBridge bridge = bridge(profile, xml);
+    MapIso8583Message message = new MapIso8583Message("0200");
+    message.setField(12, "120000");
+    message.setField(13, "111326");
+
+    ConversionResult<String> result = bridge.toIso20022(message);
+
+    assertThat(xml.values()).containsEntry("CdtTrfTxInf/AccptncDtTm", "2026-11-13T12:00:00");
+    assertThat(result.report().entries()).extracting(ReportEntry::source).containsExactly("de13");
+    assertThat(result.report().lossless()).isTrue();
+  }
+
+  @Test
   void failsWithAClearErrorWhenARequiredFieldIsMissing() {
     RecordingXmlDocumentAccess xml = new RecordingXmlDocumentAccess();
     IsoBridge bridge = bridge(Profile.fromClasspath("profiles/valid-card-transfer.yaml"), xml);

@@ -1,0 +1,86 @@
+profile: card-transfer-pacs008
+version: 1
+description: Card-initiated transfer (0200) to pacs.008
+
+source:
+  standard: iso8583
+  mti: "0200"
+target:
+  standard: iso20022
+  message: pacs.008.001.08
+  root: /Document/FIToFICstmrCdtTrf
+
+fields:
+  - id: pan
+    from: de2
+    to: CdtTrfTxInf/DbtrAcct/Id/Othr/Id
+    sensitive: true
+  - id: processing-code
+    from: de3
+    to: CdtTrfTxInf/PmtTpInf/LclInstrm/Prtry
+  - id: amount
+    from: de4
+    to: CdtTrfTxInf/IntrBkSttlmAmt
+    convert: minor-units
+    args: { currency: de49 }
+    required: true
+  - id: transmission-date-time
+    from: de7
+    to: GrpHdr/CreDtTm
+    convert: mmddhhmmss-utc
+  - id: stan
+    from: de11
+    to: CdtTrfTxInf/PmtId/InstrId
+  - id: local-date-time
+    from: de13
+    to: CdtTrfTxInf/AccptncDtTm
+    convert: local-date-time
+    args: { time: de12 }
+  - id: acquiring-institution
+    from: de32
+    to: CdtTrfTxInf/DbtrAgt/FinInstnId/ClrSysMmbId/MmbId
+    convert: trim
+    required: true
+  - id: rrn
+    from: de37
+    to: CdtTrfTxInf/PmtId/EndToEndId
+    required: true
+  - id: merchant
+    from: de43
+    to: CdtTrfTxInf/RmtInf/Ustrd
+    convert: trim
+  - id: currency
+    from: de49
+    to: CdtTrfTxInf/IntrBkSttlmAmt/@Ccy
+    convert: currency-code
+    required: true
+  - id: receiving-institution
+    from: de100
+    to: CdtTrfTxInf/CdtrAgt/FinInstnId/ClrSysMmbId/MmbId
+    convert: trim
+    required: true
+  - id: destination-account
+    from: de103
+    to: CdtTrfTxInf/CdtrAcct/Id/Othr/Id
+
+constants:
+  - to: GrpHdr/NbOfTxs
+    value: "1"
+  - to: GrpHdr/SttlmInf/SttlmMtd
+    value: CLRG
+  - to: CdtTrfTxInf/ChrgBr
+    value: SHAR
+  - to: CdtTrfTxInf/Dbtr/Nm
+    value: Cardholder
+  - to: CdtTrfTxInf/Cdtr/Nm
+    value: Merchant
+
+generated:
+  - to: GrpHdr/MsgId
+    with: message-id
+
+never:
+  - de35
+  - de52
+
+unmapped: report

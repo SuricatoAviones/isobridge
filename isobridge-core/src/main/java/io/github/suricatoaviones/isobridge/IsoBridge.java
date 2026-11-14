@@ -69,7 +69,8 @@ public final class IsoBridge {
     private final List<Profile> profiles = new ArrayList<>();
     private ConverterRegistry converters = ConverterRegistry.withBuiltIns();
     private Clock clock = Clock.systemUTC();
-    private Supplier<String> idGenerator = () -> UUID.randomUUID().toString();
+    // A UUID without hyphens has 32 characters, which fits the Max35Text of GrpHdr/MsgId.
+    private Supplier<String> idGenerator = () -> UUID.randomUUID().toString().replace("-", "");
     private XmlDocumentAccessFactory xmlFactory;
     private boolean reportValues;
 

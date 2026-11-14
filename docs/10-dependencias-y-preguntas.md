@@ -47,7 +47,7 @@ Cada una bloquea la fase indicada. Se cierra editando el documento afectado.
 | Pregunta | Bloquea | Documento afectado |
 | --- | --- | --- |
 | ¿Es compatible con Apache 2.0 la licencia de j8583? (SnakeYAML quedó confirmada: Apache 2.0) | Fase 2 | Este |
-| ¿Las rutas y los códigos del perfil incluido coinciden con los XSD de `pacs.008.001.08` y `pacs.002.001.12`? Hay que revisar cada uno antes de darlo por bueno | Fase 1 | `05-perfil-incluido.md` |
+| ¿Las rutas y los códigos del perfil incluido coinciden con los XSD? `pacs.008.001.08` está verificado; falta `pacs.002.001.12` | Fase 2 | `05-perfil-incluido.md` |
 | ¿Cómo se representan los datos suplementarios para que la vuelta recupere los campos sin elemento propio? | Fase 2 | `05-perfil-incluido.md` |
 | ¿Cómo expresa el perfil un campo que escribe en dos elementos, como DE 39? | Fase 2 | `04-formato-del-perfil.md` |
 | ¿Cuándo se amplía `Iso8583Message` para exponer subcampos, como `de48.01`? Hasta entonces el puente rechaza esos perfiles | Fase 2 | `03-modelo-de-clases.md` |
@@ -60,5 +60,7 @@ Cada una bloquea la fase indicada. Se cierra editando el documento afectado.
 - La implementación de `XmlDocumentAccess` entra por una factoría obligatoria del `Builder` (`xmlFactory`), no por `ServiceLoader`: el núcleo sigue sin depender de `isobridge-iso20022` y las pruebas usan una implementación propia.
 - `unmapped: supplementary` y las referencias a subcampos se aplazan a la fase 2. El lector acepta la sintaxis, pero el puente rechaza el perfil al construirse con un mensaje que explica el motivo.
 - `FieldConverter.infers()` declara si la ida deduce parte del valor; el motor lo usa para emitir `INFERRED` sin conocer conversores concretos.
-- Los valores por defecto son `Clock.systemUTC()`, identificadores UUID y `now` como `Instant.toString()`. Todos se pueden sustituir en el `Builder` para que las pruebas sean deterministas.
+- Los valores por defecto son `Clock.systemUTC()`, identificadores UUID sin guiones (32 caracteres, para caber en `Max35Text`) y `now` como `Instant.toString()`. Todos se pueden sustituir en el `Builder` para que las pruebas sean deterministas.
 - `unmapped: fail` lanza `ConversionException` con el primer campo sin mapear; `unmapped: report` los marca `DROPPED` en orden de número.
+- Un campo que solo aparece como referencia de `args` cuenta como consumido y no se reporta como `DROPPED`.
+- El perfil incluido usa `SHAR` en `ChrgBr` y `Cardholder`/`Merchant` en `Dbtr/Nm` y `Cdtr/Nm`, porque el XSD exige esos elementos y ISO 8583 no los trae. Son valores de ejemplo, pensados para sustituirse por enriquecimiento externo.

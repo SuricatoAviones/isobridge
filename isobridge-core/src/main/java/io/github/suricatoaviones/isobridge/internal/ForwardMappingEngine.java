@@ -102,7 +102,7 @@ public final class ForwardMappingEngine {
         }
         continue;
       }
-      ConvertedValue converted = convert(field, source.orElseThrow(), message);
+      ConvertedValue converted = convert(field, source.orElseThrow(), message, usedFields);
       xml.write(field.to(), converted.value());
       entries.add(
           ReportEntry.of(field, converted.status(), reportValues ? converted.value() : null, null));
@@ -168,7 +168,8 @@ public final class ForwardMappingEngine {
     return new ConversionResult<>(xml.toXml(), report);
   }
 
-  private ConvertedValue convert(FieldMapping field, String value, Iso8583Message message) {
+  private ConvertedValue convert(
+      FieldMapping field, String value, Iso8583Message message, Set<Integer> usedFields) {
     if (field.convert().isEmpty()) {
       return new ConvertedValue(value, Status.MAPPED);
     }
@@ -179,7 +180,8 @@ public final class ForwardMappingEngine {
             .orElseThrow(() ->
                 new IsoBridgeException(
                     "The mapping '" + field.id() + "' uses the unknown converter '" + name + "'"));
-    ConversionContext context = new FieldContext(clock, message, resolveArgs(field, message));
+    ConversionContext context =
+        new FieldContext(clock, message, resolveArgs(field, message, usedFields));
     return new ConvertedValue(
         converter.forward(value, context), converter.infers() ? Status.INFERRED : Status.MAPPED);
   }
@@ -223,14 +225,19 @@ public final class ForwardMappingEngine {
     };
   }
 
-  private Map<String, Object> resolveArgs(FieldMapping field, Iso8583Message message) {
+  private Map<String, Object> resolveArgs(
+      FieldMapping field, Iso8583Message message, Set<Integer> usedFields) {
     Map<String, Object> resolved = new LinkedHashMap<>();
     for (Map.Entry<String, Object> argument : field.args().entrySet()) {
       Object value = argument.getValue();
       if (value instanceof String text) {
         Optional<FieldReference> reference = parseReference(text);
         if (reference.isPresent()) {
-          read(reference.orElseThrow(), message)
+          FieldReference fieldReference = reference.orElseThrow();
+          if (fieldReference instanceof FieldReference.DataElement element) {
+            usedFields.add(element.number());
+          }
+          read(fieldReference, message)
               .ifPresent(fieldValue -> resolved.put(argument.getKey(), fieldValue));
           continue;
         }
