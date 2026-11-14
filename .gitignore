@@ -24,3 +24,7 @@ buildNumber.properties
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Agent tooling state
+.agents/
+skills-lock.json
