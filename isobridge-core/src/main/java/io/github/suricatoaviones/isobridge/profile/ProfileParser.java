@@ -246,6 +246,12 @@ final class ProfileParser {
     String id = requiredString(mapping, "id");
     String from = requiredString(mapping, "from");
     String to = requiredString(mapping, "to");
+    if (from != null && !validReference(mapping, from)) {
+      return null;
+    }
+    if (to != null && !validPath(mapping, to)) {
+      return null;
+    }
     String convert = optionalScalarString(mapping, "convert");
     Map<String, Object> args = Map.of();
     YamlTree.Value argsNode = mapping.entries().get("args");
@@ -255,6 +261,9 @@ final class ProfileParser {
     Boolean required = optionalBoolean(mapping, "required");
     Boolean sensitive = optionalBoolean(mapping, "sensitive");
     Direction direction = optionalDirection(mapping);
+    if (id == null || from == null || to == null) {
+      return null;
+    }
     if (id == null || from == null || to == null) {
       return null;
     }
@@ -370,7 +379,7 @@ final class ProfileParser {
       unknownKeys(mapping, CONSTANT_KEYS);
       String to = requiredString(mapping, "to");
       String value = stringifiedScalar(mapping, "value");
-      if (to == null || value == null) {
+      if (to == null || value == null || !validPath(mapping, to)) {
         continue;
       }
       try {
@@ -400,7 +409,7 @@ final class ProfileParser {
       unknownKeys(mapping, GENERATED_KEYS);
       String to = requiredString(mapping, "to");
       String with = requiredString(mapping, "with");
-      if (to == null || with == null) {
+      if (to == null || with == null || !validPath(mapping, to)) {
         continue;
       }
       if (!"message-id".equals(with) && !"now".equals(with)) {
@@ -432,7 +441,7 @@ final class ProfileParser {
       if (item instanceof YamlTree.Scalar scalar && scalar.value() instanceof String text) {
         if (text.isBlank()) {
           errors.add(new ProfileException.Error(item.line(), "never entries must not be blank"));
-        } else {
+        } else if (validReference(item.line(), text, "never")) {
           never.add(text);
         }
       } else {
@@ -574,6 +583,34 @@ final class ProfileParser {
   private int lineOfValue(YamlTree.Mapping mapping, String key) {
     YamlTree.Value node = mapping.entries().get(key);
     return node == null ? mapping.line() : node.line();
+  }
+
+  private boolean validReference(YamlTree.Mapping mapping, String from) {
+    return validReference(lineOfValue(mapping, "from"), from, "from");
+  }
+
+  private boolean validReference(int line, String from, String key) {
+    try {
+      FieldReference.parse(from);
+      return true;
+    } catch (IllegalArgumentException e) {
+      errors.add(
+          new ProfileException.Error(
+              line, key + " '" + from + "' is not valid: " + e.getMessage()));
+      return false;
+    }
+  }
+
+  private boolean validPath(YamlTree.Mapping mapping, String to) {
+    try {
+      ElementPath.parse(to);
+      return true;
+    } catch (IllegalArgumentException e) {
+      errors.add(
+          new ProfileException.Error(
+              lineOfValue(mapping, "to"), "to '" + to + "' is not valid: " + e.getMessage()));
+      return false;
+    }
   }
 
   private record FieldCandidate(FieldMapping mapping, int idLine, int toLine, int fromLine) {}

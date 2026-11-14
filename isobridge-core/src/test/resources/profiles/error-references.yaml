@@ -1,0 +1,25 @@
+profile: bad
+version: 1
+source:
+  standard: iso8583
+  mti: "0200"
+target:
+  standard: iso20022
+  message: pacs.008.001.08
+  root: /Document/FIToFICstmrCdtTrf
+fields:
+  - id: badFrom
+    from: DE4
+    to: CdtTrfTxInf/IntrBkSttlmAmt
+  - id: badTo
+    from: de4
+    to: /CdtTrfTxInf/IntrBkSttlmAmt
+  - id: emptySlice
+    from: de3[2:2]
+    to: CdtTrfTxInf/PmtId/EndToEndId
+constants:
+  - to: GrpHdr//NbOfTxs
+    value: "1"
+generated:
+  - to: "@MsgId"
+    with: message-id

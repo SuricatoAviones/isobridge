@@ -90,12 +90,24 @@ unmapped: report   # report | fail | supplementary
 | `de3[0:2]` | Caracteres 0 y 1 del elemento 3 (inicio incluido, fin excluido) |
 | `de48.01` | Subcampo 01 del elemento 48; requiere que el adaptador lo exponga |
 
+Reglas:
+
+- El número de elemento va de 1 a 128, sin ceros a la izquierda: `de4` sí, `de04` no.
+- Los índices de la rebanada son posiciones de carácter, no de byte, empiezan en 0 y el fin queda excluido; `[0:2]` toma dos caracteres.
+- Una referencia es el elemento completo, una rebanada o un subcampo, nunca dos a la vez.
+- El subcampo es numérico y se conserva tal cual, con sus ceros: `de48.01`.
+- `mti` no admite rebanadas ni subcampos.
+
 ## Sintaxis de `to`
 
 - Segmentos separados por `/`, sin prefijo de espacio de nombres: `CdtTrfTxInf/PmtId/EndToEndId`.
 - Un segmento final `@Nombre` es un atributo del elemento anterior.
+- La ruta es relativa a `target.root`: no empieza por `/` y no tiene segmentos vacíos.
+- Los nombres siguen la regla de un nombre XML sin prefijo: letras, dígitos, `.`, `-` y `_`, empezando por letra o `_`.
 - No se admiten predicados ni comodines. Es un subconjunto de XPath pensado para poder escribir además de leer.
 - Los elementos repetidos no se soportan en la primera versión: cada ruta identifica un único elemento.
+
+Las referencias mal formadas se rechazan al cargar el perfil, con su línea y su motivo.
 
 ## Conversores incluidos
 

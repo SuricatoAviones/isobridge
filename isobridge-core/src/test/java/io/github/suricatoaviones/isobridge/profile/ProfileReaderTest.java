@@ -113,6 +113,43 @@ class ProfileReaderTest {
   }
 
   @Test
+  void reportsMalformedFromAndToReferences() {
+    ProfileException exception = loadError("error-references.yaml");
+
+    assertThat(exception.errors()).hasSize(5);
+    assertThat(exception.errors())
+        .extracting(ProfileException.Error::line)
+        .containsExactlyInAnyOrder(12, 16, 18, 21, 24);
+    assertThat(exception).hasMessageContaining("from 'DE4'");
+    assertThat(exception).hasMessageContaining("to '/CdtTrfTxInf/IntrBkSttlmAmt'");
+    assertThat(exception).hasMessageContaining("de3[2:2]");
+    assertThat(exception).hasMessageContaining("GrpHdr//NbOfTxs");
+  }
+
+  @Test
+  void reportsMalformedNeverReferences() {
+    ProfileException exception =
+        catchThrowableOfType(
+            () -> reader.fromString("never", validYaml() + "never: [de0]\n"),
+            ProfileException.class);
+
+    assertThat(exception).hasMessageContaining("never 'de0' is not valid");
+  }
+
+  @Test
+  void reportsAFieldWithoutFrom() {
+    ProfileException exception =
+        catchThrowableOfType(
+            () ->
+                reader.fromString(
+                    "missing-from",
+                    validYaml().replace("fields: []\n", "fields:\n  - id: x\n    to: A\n")),
+            ProfileException.class);
+
+    assertThat(exception).hasMessageContaining("missing key 'from'");
+  }
+
+  @Test
   void reportsYamlSyntaxErrors() {
     ProfileException exception = loadError("error-syntax.yaml");
 

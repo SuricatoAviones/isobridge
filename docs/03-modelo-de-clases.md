@@ -88,6 +88,8 @@ Rombo relleno: composición. Rombo vacío: agregación. Línea punteada: depende
 | `IsoBridge` | Clase final inmutable | Se construye con un `Builder`; segura entre hilos |
 | `Profile` (con `Constant`, `Generated` y `Unmapped` anidados), `FieldMapping`, `MessageSpec` | `record` | Se crean al leer el YAML, ya validados; inmutables y con igualdad por valor |
 | `ProfileReader` | Clase final inmutable | Lee y valida el YAML; recibe el `ConverterRegistry` con el que comprueba los nombres de conversor |
+| `FieldReference` | Interfaz sellada (`Mti`, `DataElement`) | Referencia a un campo ISO 8583: `mti`, `de4`, `de3[0:2]` o `de48.01` |
+| `ElementPath` | `record` | Ruta relativa a un elemento o atributo del XML ISO 20022 |
 | `ProfileException` | Excepción final | Lleva todos los errores de la carga, cada uno con su línea y su motivo |
 | `FieldConverter` | Interfaz | Punto de extensión; los incluidos se registran por nombre |
 | `ConversionContext` | Interfaz | La implementa el motor: reloj, otros campos del mensaje y `args` |
@@ -157,6 +159,21 @@ public final class ProfileReader {
 public final class ProfileException extends IsoBridgeException {
     public List<Error> errors();
     public record Error(int line, String reason) {}
+}
+
+public sealed interface FieldReference permits FieldReference.Mti, FieldReference.DataElement {
+    String text();
+    static FieldReference parse(String text);
+
+    record Mti() implements FieldReference {}
+    record DataElement(int number, Optional<Slice> slice, Optional<String> subfield)
+        implements FieldReference {}
+    record Slice(int start, int endExclusive) {}
+}
+
+public record ElementPath(List<String> elements, Optional<String> attribute) {
+    public static ElementPath parse(String text);
+    public boolean isAttribute();
 }
 
 public interface Iso8583Message {

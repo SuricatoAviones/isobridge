@@ -40,7 +40,7 @@ En este orden, porque cada tarea se apoya en la anterior:
 - [x] Interfaz `Iso8583Message` y una implementación en memoria para pruebas (`MapIso8583Message`).
 - [x] Modelo del perfil: `Profile`, `FieldMapping`, `MessageSpec`, `Direction`.
 - [x] Lector del YAML y validación al cargar, con todos los errores y su línea (RF-12).
-- [ ] Analizador de la sintaxis de `from` (`de4`, `de3[0:2]`, `de48.01`) y de `to` (rutas y atributos).
+- [x] Analizador de la sintaxis de `from` (`de4`, `de3[0:2]`, `de48.01`) y de `to` (rutas y atributos).
 - [ ] Modelo del informe: `ConversionReport`, `ReportEntry`, `Status`, enmascarado (RF-06, RF-09).
 - [ ] Interfaz `XmlDocumentAccess` en `core`.
 - [ ] Módulo `isobridge-iso20022`: escritura del XML por rutas en el orden del XSD, con entidades externas deshabilitadas.
