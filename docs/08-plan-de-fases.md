@@ -55,7 +55,7 @@ Cierre: la prueba de extremo a extremo pasa y la cobertura de líneas de `core` 
 Objetivo: el mismo perfil funciona en los dos sentidos.
 
 - [x] Lectura del XML por rutas en `isobridge-iso20022`. Implementada en la fase 1 junto con la escritura; la fase 2 añade las pruebas de los caminos de error y del namespace.
-- [ ] Motor en sentido de vuelta e `IsoBridge.toIso8583`.
+- [x] Motor en sentido de vuelta e `IsoBridge.toIso8583`: perfil por tipo de mensaje del namespace, resolución de `args` en cualquier orden, informe invertido y `MapIso8583Message` como resultado.
 - [ ] Datos suplementarios: escritura en la ida y recuperación en la vuelta.
 - [ ] Conversores propios registrables desde el `Builder` (RF-05).
 - [ ] Modo estricto (RF-07).

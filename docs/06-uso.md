@@ -26,7 +26,7 @@ if (report.hasLosses()) {
 ConversionResult<Iso8583Message> back = bridge.toIso8583(xml);
 ```
 
-La factoría XML es obligatoria: el núcleo no depende de `isobridge-iso20022`. En producción se usa `DomXmlDocumentAccessFactory`, que elige el XSD incluido por el tipo de mensaje; en pruebas, una implementación propia de `XmlDocumentAccessFactory`. `reportValues(true)` añade a cada entrada su valor enmascarado, y está desactivado por defecto.
+La factoría XML es obligatoria: el núcleo no depende de `isobridge-iso20022`. En producción se usa `DomXmlDocumentAccessFactory`, que elige el XSD incluido por el tipo de mensaje; en pruebas, una implementación propia de `XmlDocumentAccessFactory`. Para la vuelta, la factoría debe implementar además `messageType(xml)` y `parse(xml, rootPath)`; `DomXmlDocumentAccessFactory` ya lo hace, y una factoría que solo escriba puede seguir siendo una lambda porque esos métodos tienen implementación por defecto. `reportValues(true)` añade a cada entrada su valor enmascarado, y está desactivado por defecto.
 
 Con varios perfiles cargados, el puente elige el que coincide con el MTI del mensaje de entrada o con el tipo de mensaje del XML. Si ninguno coincide, lanza `NoProfileException`. Dos perfiles que coinciden con el mismo mensaje son un error de configuración y se detectan al construir el puente.
 

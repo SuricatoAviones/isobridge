@@ -251,7 +251,7 @@ public final class DomXmlDocumentAccess implements XmlDocumentAccess {
     return path.elements();
   }
 
-  private static Document parseDocument(String xml) {
+  static Document parseDocument(String xml) {
     try {
       return SchemaModel.SecureXml.factory()
           .newDocumentBuilder()

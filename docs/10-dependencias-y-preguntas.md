@@ -64,3 +64,7 @@ Cada una bloquea la fase indicada. Se cierra editando el documento afectado.
 - `unmapped: fail` lanza `ConversionException` con el primer campo sin mapear; `unmapped: report` los marca `DROPPED` en orden de número.
 - Un campo que solo aparece como referencia de `args` cuenta como consumido y no se reporta como `DROPPED`.
 - El perfil incluido usa `SHAR` en `ChrgBr` y `Cardholder`/`Merchant` en `Dbtr/Nm` y `Cdtr/Nm`, porque el XSD exige esos elementos y ISO 8583 no los trae. Son valores de ejemplo, pensados para sustituirse por enriquecimiento externo.
+- La vuelta elige el perfil por el tipo de mensaje del namespace del XML. `XmlDocumentAccessFactory` añade `messageType(xml)` y `parse(xml, rootPath)` como métodos por defecto: una factoría que solo escribe sigue valiendo como lambda, y una que lee los implementa.
+- `IsoBridge.toIso8583` devuelve un `MapIso8583Message`, que pasa de `src/test` a `src/main`, con el MTI de `source.mti` del perfil.
+- En la vuelta, los `args` se resuelven contra el mensaje ISO 8583 que se está construyendo. Si el campo referenciado aún no existe, el motor convierte antes su mapeo; un ciclo detiene la conversión con un mensaje claro.
+- El informe de la vuelta intercambia `source` y `target`: `source` es la ruta XML y `target` el campo ISO 8583. Solo emite entradas `MAPPED`; `constants`, `generated` y `never` no participan.

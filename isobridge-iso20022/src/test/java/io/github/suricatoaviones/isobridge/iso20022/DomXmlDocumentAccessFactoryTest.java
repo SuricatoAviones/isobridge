@@ -3,9 +3,11 @@ package io.github.suricatoaviones.isobridge.iso20022;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import io.github.suricatoaviones.isobridge.ConversionException;
 import io.github.suricatoaviones.isobridge.ConversionResult;
 import io.github.suricatoaviones.isobridge.IsoBridge;
 import io.github.suricatoaviones.isobridge.message.Iso8583Message;
+import io.github.suricatoaviones.isobridge.message.XmlDocumentAccess;
 import io.github.suricatoaviones.isobridge.profile.Direction;
 import io.github.suricatoaviones.isobridge.profile.FieldMapping;
 import io.github.suricatoaviones.isobridge.profile.MessageSpec;
@@ -67,6 +69,56 @@ class DomXmlDocumentAccessFactoryTest {
     assertThat(result.value().indexOf("<GrpHdr>"))
         .isLessThan(result.value().indexOf("<CdtTrfTxInf>"));
     assertThat(result.report().profile()).isEqualTo("factory-test");
+  }
+
+  @Test
+  void detectsTheMessageTypeFromTheNamespace() {
+    DomXmlDocumentAccessFactory factory = new DomXmlDocumentAccessFactory();
+
+    assertThat(
+            factory.messageType(
+                "<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\"/>"))
+        .isEqualTo("pacs.008.001.08");
+    assertThat(
+            factory.messageType(
+                "<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:pacs.002.001.12\"/>"))
+        .isEqualTo("pacs.002.001.12");
+  }
+
+  @Test
+  void rejectsAnXmlWithoutAnIso20022Namespace() {
+    DomXmlDocumentAccessFactory factory = new DomXmlDocumentAccessFactory();
+
+    assertThatThrownBy(() -> factory.messageType("<Document/>"))
+        .isInstanceOf(ConversionException.class)
+        .hasMessageContaining("namespace");
+    assertThatThrownBy(() -> factory.messageType("<Document xmlns=\"urn:example:other\"/>"))
+        .isInstanceOf(ConversionException.class)
+        .hasMessageContaining("ISO 20022");
+  }
+
+  @Test
+  void rejectsANamespaceThatIsNotAMessageType() {
+    DomXmlDocumentAccessFactory factory = new DomXmlDocumentAccessFactory();
+
+    assertThatThrownBy(() ->
+            factory.messageType(
+                "<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:not-a-message\"/>"))
+        .isInstanceOf(ConversionException.class)
+        .hasMessageContaining("not-a-message");
+  }
+
+  @Test
+  void parsesTheXmlAtTheRootOfTheProfile() {
+    DomXmlDocumentAccessFactory factory = new DomXmlDocumentAccessFactory();
+    String xml =
+        "<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\">"
+            + "<FIToFICstmrCdtTrf><GrpHdr><MsgId>MSG-1</MsgId></GrpHdr>"
+            + "</FIToFICstmrCdtTrf></Document>";
+
+    XmlDocumentAccess document = factory.parse(xml, "/Document/FIToFICstmrCdtTrf");
+
+    assertThat(document.read("GrpHdr/MsgId")).contains("MSG-1");
   }
 
   @Test

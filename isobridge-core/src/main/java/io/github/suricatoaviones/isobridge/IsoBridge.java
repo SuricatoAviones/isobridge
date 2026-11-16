@@ -3,7 +3,9 @@ package io.github.suricatoaviones.isobridge;
 import io.github.suricatoaviones.isobridge.convert.ConverterRegistry;
 import io.github.suricatoaviones.isobridge.convert.FieldConverter;
 import io.github.suricatoaviones.isobridge.internal.ForwardMappingEngine;
+import io.github.suricatoaviones.isobridge.internal.ReverseMappingEngine;
 import io.github.suricatoaviones.isobridge.message.Iso8583Message;
+import io.github.suricatoaviones.isobridge.message.XmlDocumentAccess;
 import io.github.suricatoaviones.isobridge.message.XmlDocumentAccessFactory;
 import io.github.suricatoaviones.isobridge.profile.FieldMapping;
 import io.github.suricatoaviones.isobridge.profile.FieldReference;
@@ -27,17 +29,29 @@ import java.util.function.Supplier;
  * validate the YAML again. The clock, the generated identifiers and the XML document factory are
  * injected through the {@link Builder}.
  *
- * <p>This first phase implements the forward conversion, {@link #toIso20022}. The reverse
- * conversion belongs to phase 2.
+ * <p>It converts in both directions: {@link #toIso20022} writes XML from an ISO 8583 message and
+ * {@link #toIso8583} reads XML back into an ISO 8583 message. The reverse direction needs an {@link
+ * XmlDocumentAccessFactory} that can read XML, such as the one in {@code isobridge-iso20022}.
  */
 public final class IsoBridge {
 
   private final Map<String, Profile> profilesByMti;
-  private final ForwardMappingEngine engine;
+  private final Map<String, Profile> profilesByMessage;
+  private final ForwardMappingEngine forwardEngine;
+  private final ReverseMappingEngine reverseEngine;
+  private final XmlDocumentAccessFactory xmlFactory;
 
-  private IsoBridge(Map<String, Profile> profilesByMti, ForwardMappingEngine engine) {
+  private IsoBridge(
+      Map<String, Profile> profilesByMti,
+      Map<String, Profile> profilesByMessage,
+      ForwardMappingEngine forwardEngine,
+      ReverseMappingEngine reverseEngine,
+      XmlDocumentAccessFactory xmlFactory) {
     this.profilesByMti = profilesByMti;
-    this.engine = engine;
+    this.profilesByMessage = profilesByMessage;
+    this.forwardEngine = forwardEngine;
+    this.reverseEngine = reverseEngine;
+    this.xmlFactory = xmlFactory;
   }
 
   /** Creates a builder with the built-in converters, the UTC clock and random identifiers. */
@@ -60,7 +74,29 @@ public final class IsoBridge {
     if (profile == null) {
       throw new NoProfileException("No profile matches the MTI '" + message.mti() + "'");
     }
-    return engine.convert(profile, message);
+    return forwardEngine.convert(profile, message);
+  }
+
+  /**
+   * Converts an ISO 20022 XML document into an ISO 8583 message.
+   *
+   * <p>The profile is selected by the message type of the XML namespace. A missing required field
+   * throws {@link RequiredFieldException}; an unknown message type throws {@link
+   * NoProfileException}.
+   *
+   * @param xml the XML text
+   * @return the ISO 8583 message and its report
+   * @throws UnsupportedOperationException when the configured XML factory cannot read XML
+   */
+  public ConversionResult<Iso8583Message> toIso8583(String xml) {
+    Objects.requireNonNull(xml, "xml");
+    String messageType = xmlFactory.messageType(xml);
+    Profile profile = profilesByMessage.get(messageType);
+    if (profile == null) {
+      throw new NoProfileException("No profile matches the message '" + messageType + "'");
+    }
+    XmlDocumentAccess document = xmlFactory.parse(xml, profile.target().root().orElseThrow());
+    return reverseEngine.convert(profile, document);
   }
 
   /** Builds an {@link IsoBridge}. */
@@ -185,7 +221,10 @@ public final class IsoBridge {
       }
       ForwardMappingEngine engine =
           new ForwardMappingEngine(converters, clock, idGenerator, xmlFactory, reportValues);
-      return new IsoBridge(Map.copyOf(byMti), engine);
+      ReverseMappingEngine reverseEngine =
+          new ReverseMappingEngine(converters, clock, reportValues);
+      return new IsoBridge(
+          Map.copyOf(byMti), Map.copyOf(byMessage), engine, reverseEngine, xmlFactory);
     }
 
     private void validate(Profile profile) {

@@ -9,6 +9,7 @@ import io.github.suricatoaviones.isobridge.convert.FieldConverter;
 import io.github.suricatoaviones.isobridge.message.Iso8583Message;
 import io.github.suricatoaviones.isobridge.message.MapIso8583Message;
 import io.github.suricatoaviones.isobridge.message.XmlDocumentAccess;
+import io.github.suricatoaviones.isobridge.message.XmlDocumentAccessFactory;
 import io.github.suricatoaviones.isobridge.profile.Direction;
 import io.github.suricatoaviones.isobridge.profile.FieldMapping;
 import io.github.suricatoaviones.isobridge.profile.MessageSpec;
@@ -685,6 +686,394 @@ class IsoBridgeTest {
     assertThatThrownBy(() -> IsoBridge.builder().profile(profile).build())
         .isInstanceOf(NullPointerException.class)
         .hasMessageContaining("xmlFactory");
+  }
+
+  @Test
+  void convertsXmlBackIntoAnIso8583Message() {
+    RecordingXmlDocumentAccess xml = new RecordingXmlDocumentAccess();
+    xml.write("CdtTrfTxInf/IntrBkSttlmAmt", "125.50");
+    xml.write("CdtTrfTxInf/IntrBkSttlmAmt/@Ccy", "USD");
+    xml.write("CdtTrfTxInf/DbtrAcct/Id/Othr/Id", "5413331234564821");
+    xml.write("GrpHdr/CreDtTm", "2026-11-13T10:00:00Z");
+    Profile profile = reverseProfile();
+    FakeXmlFactory factory = new FakeXmlFactory(PACS_008, xml);
+    IsoBridge bridge = reverseBridge(profile, factory);
+
+    ConversionResult<Iso8583Message> result = bridge.toIso8583("<xml/>");
+
+    assertThat(factory.root()).hasValue(PACS_008_ROOT);
+    assertThat(result.value().mti()).isEqualTo("0200");
+    assertThat(result.value().presentFields()).containsExactlyInAnyOrder(2, 4, 7, 49);
+    assertThat(result.value().field(4)).contains("000000012550");
+    assertThat(result.value().field(49)).contains("840");
+    assertThat(result.value().field(2)).contains("5413331234564821");
+    assertThat(result.value().field(7)).contains("1113100000");
+
+    ConversionReport report = result.report();
+    assertThat(report.profile()).isEqualTo("reverse");
+    assertThat(report.direction()).isEqualTo(ConversionDirection.ISO20022_TO_ISO8583);
+    assertThat(report.lossless()).isTrue();
+    assertThat(report.entries()).allMatch(entry -> entry.value() == null);
+    assertThat(report.entries())
+        .extracting(ReportEntry::source, ReportEntry::target, ReportEntry::status)
+        .containsExactly(
+            tuple("CdtTrfTxInf/IntrBkSttlmAmt", "de4", Status.MAPPED),
+            tuple("CdtTrfTxInf/IntrBkSttlmAmt/@Ccy", "de49", Status.MAPPED),
+            tuple("CdtTrfTxInf/DbtrAcct/Id/Othr/Id", "de2", Status.MAPPED),
+            tuple("GrpHdr/CreDtTm", "de7", Status.MAPPED));
+    assertThat(report.summary()).isEqualTo("reverse v1 ISO20022_TO_ISO8583: 4 mapped");
+  }
+
+  @Test
+  void choosesTheProfileOfTheXmlByItsMessageType() {
+    RecordingXmlDocumentAccess xml = new RecordingXmlDocumentAccess();
+    xml.write("TxInfAndSts/OrgnlInstrId", "STAN-1");
+    Profile request =
+        profile(
+            "request",
+            "0200",
+            Profile.Unmapped.REPORT,
+            List.of(mapping("amount", "de4", "CdtTrfTxInf/IntrBkSttlmAmt")));
+    Profile response =
+        profile(
+            "response",
+            "0210",
+            PACS_002,
+            PACS_002_ROOT,
+            Profile.Unmapped.REPORT,
+            List.of(mapping("stan", "de11", "TxInfAndSts/OrgnlInstrId")));
+    IsoBridge bridge = reverseBridge(List.of(request, response), new FakeXmlFactory(PACS_002, xml));
+
+    ConversionResult<Iso8583Message> result = bridge.toIso8583("<xml/>");
+
+    assertThat(result.report().profile()).isEqualTo("response");
+    assertThat(result.value().mti()).isEqualTo("0210");
+    assertThat(result.value().field(11)).contains("STAN-1");
+  }
+
+  @Test
+  void rejectsAnXmlWithoutAProfile() {
+    Profile profile =
+        profile(
+            "request",
+            "0200",
+            Profile.Unmapped.REPORT,
+            List.of(mapping("amount", "de4", "CdtTrfTxInf/IntrBkSttlmAmt")));
+    IsoBridge bridge =
+        reverseBridge(
+            profile, new FakeXmlFactory("pacs.009.001.08", new RecordingXmlDocumentAccess()));
+
+    assertThatThrownBy(() -> bridge.toIso8583("<xml/>"))
+        .isInstanceOf(NoProfileException.class)
+        .hasMessageContaining("pacs.009.001.08");
+  }
+
+  @Test
+  void failsWhenARequiredElementIsMissingFromTheXml() {
+    Profile profile = reverseProfile();
+    IsoBridge bridge =
+        reverseBridge(profile, new FakeXmlFactory(PACS_008, new RecordingXmlDocumentAccess()));
+
+    assertThatThrownBy(() -> bridge.toIso8583("<xml/>"))
+        .isInstanceOf(RequiredFieldException.class)
+        .hasMessageContaining("CdtTrfTxInf/IntrBkSttlmAmt")
+        .hasMessageContaining("amount");
+  }
+
+  @Test
+  void skipsMappingsThatOnlyApplyToTheForwardDirection() {
+    RecordingXmlDocumentAccess xml = new RecordingXmlDocumentAccess();
+    xml.write("CdtTrfTxInf/PmtTpInf/LclInstrm/Prtry", "990000");
+    xml.write("CdtTrfTxInf/IntrBkSttlmAmt", "100");
+    FieldMapping forwardOnly =
+        new FieldMapping(
+            "process",
+            "de3",
+            "CdtTrfTxInf/PmtTpInf/LclInstrm/Prtry",
+            Direction.FORWARD,
+            false,
+            false,
+            Optional.empty(),
+            Map.of());
+    Profile profile =
+        profile(
+            "forward-only",
+            "0200",
+            Profile.Unmapped.REPORT,
+            List.of(forwardOnly, mapping("amount", "de4", "CdtTrfTxInf/IntrBkSttlmAmt")));
+    IsoBridge bridge = reverseBridge(profile, new FakeXmlFactory(PACS_008, xml));
+
+    ConversionResult<Iso8583Message> result = bridge.toIso8583("<xml/>");
+
+    assertThat(result.value().presentFields()).containsExactly(4);
+    assertThat(result.report().entries()).extracting(ReportEntry::target).containsExactly("de4");
+  }
+
+  @Test
+  void masksTheValuesOfTheReverseReportWhenEnabled() {
+    RecordingXmlDocumentAccess xml = new RecordingXmlDocumentAccess();
+    xml.write("CdtTrfTxInf/IntrBkSttlmAmt", "125.50");
+    xml.write("CdtTrfTxInf/IntrBkSttlmAmt/@Ccy", "USD");
+    xml.write("CdtTrfTxInf/DbtrAcct/Id/Othr/Id", "5413331234564821");
+    xml.write("GrpHdr/CreDtTm", "2026-11-13T10:00:00Z");
+    IsoBridge bridge =
+        IsoBridge.builder()
+            .profile(reverseProfile())
+            .clock(CLOCK)
+            .idGenerator(() -> "MSG-1")
+            .xmlFactory(new FakeXmlFactory(PACS_008, xml))
+            .reportValues(true)
+            .build();
+
+    ConversionResult<Iso8583Message> result = bridge.toIso8583("<xml/>");
+
+    Map<String, ReportEntry> entries = new LinkedHashMap<>();
+    result.report().entries().forEach(entry -> entries.put(entry.target(), entry));
+    assertThat(entries.get("de4").value()).isEqualTo("000000012550");
+    assertThat(entries.get("de49").value()).isEqualTo("840");
+    assertThat(entries.get("de2").value()).isEqualTo("541333******4821");
+    assertThat(entries.get("de7").value()).isEqualTo("1113100000");
+    assertThat(result.report().toString()).doesNotContain("5413331234564821");
+  }
+
+  @Test
+  void skipsOptionalMappingsWhoseElementIsAbsentFromTheXml() {
+    Profile profile =
+        profile(
+            "optional",
+            "0200",
+            Profile.Unmapped.REPORT,
+            List.of(mapping("optional", "de55", "CdtTrfTxInf/RmtInf/Ustrd")));
+    IsoBridge bridge =
+        reverseBridge(profile, new FakeXmlFactory(PACS_008, new RecordingXmlDocumentAccess()));
+
+    ConversionResult<Iso8583Message> result = bridge.toIso8583("<xml/>");
+
+    assertThat(result.value().presentFields()).isEmpty();
+    assertThat(result.report().entries()).isEmpty();
+    assertThat(result.report().summary()).isEqualTo("optional v1 ISO20022_TO_ISO8583: no entries");
+  }
+
+  @Test
+  void rejectsAMappingThatCannotBeWrittenInTheReverseDirection() {
+    RecordingXmlDocumentAccess xml = new RecordingXmlDocumentAccess();
+    xml.write("GrpHdr/MsgId", "0200");
+    Profile profile =
+        profile(
+            "not-writable",
+            "0200",
+            Profile.Unmapped.REPORT,
+            List.of(mapping("type", "mti", "GrpHdr/MsgId")));
+    IsoBridge bridge = reverseBridge(profile, new FakeXmlFactory(PACS_008, xml));
+
+    assertThatThrownBy(() -> bridge.toIso8583("<xml/>"))
+        .isInstanceOf(IsoBridgeException.class)
+        .hasMessageContaining("whole data elements")
+        .hasMessageContaining("type");
+  }
+
+  @Test
+  void rejectsCircularConverterArgumentsInReverse() {
+    RecordingXmlDocumentAccess xml = new RecordingXmlDocumentAccess();
+    xml.write("A", "1");
+    xml.write("B", "2");
+    FieldConverter identity = FieldConverter.of("identity", value -> value, value -> value);
+    Profile profile =
+        profile(
+            "cycle",
+            "0200",
+            Profile.Unmapped.REPORT,
+            List.of(
+                new FieldMapping(
+                    "a",
+                    "de4",
+                    "A",
+                    Direction.BOTH,
+                    false,
+                    false,
+                    Optional.of("identity"),
+                    Map.of("other", "de5")),
+                new FieldMapping(
+                    "b",
+                    "de5",
+                    "B",
+                    Direction.BOTH,
+                    false,
+                    false,
+                    Optional.of("identity"),
+                    Map.of("other", "de4"))));
+    IsoBridge bridge =
+        IsoBridge.builder()
+            .profile(profile)
+            .converter(identity)
+            .clock(CLOCK)
+            .xmlFactory(new FakeXmlFactory(PACS_008, xml))
+            .build();
+
+    assertThatThrownBy(() -> bridge.toIso8583("<xml/>"))
+        .isInstanceOf(IsoBridgeException.class)
+        .hasMessageContaining("depends on itself");
+  }
+
+  @Test
+  void passesTheMtiLiteralsFieldsAndClockToReverseConverters() {
+    RecordingXmlDocumentAccess xml = new RecordingXmlDocumentAccess();
+    xml.write("CdtTrfTxInf/PmtTpInf/LclInstrm/Prtry", "990000");
+    xml.write("CdtTrfTxInf/IntrBkSttlmAmt", "100");
+    FieldConverter inspect =
+        new FieldConverter() {
+
+          @Override
+          public String name() {
+            return "inspect";
+          }
+
+          @Override
+          public String forward(String value, ConversionContext context) {
+            return value;
+          }
+
+          @Override
+          public String reverse(String value, ConversionContext context) {
+            return value
+                + "|"
+                + context.argument("literal").orElse("")
+                + "|"
+                + context.argument("kind").orElse("")
+                + "|"
+                + context.argument("ref").orElse("")
+                + "|"
+                + context.field("mti").orElse("")
+                + "|"
+                + context.field("de4[0:1]").orElse("")
+                + "|"
+                + context.clock().instant();
+          }
+        };
+    Profile profile =
+        profile(
+            "context",
+            "0200",
+            Profile.Unmapped.REPORT,
+            List.of(
+                new FieldMapping(
+                    "custom",
+                    "de3",
+                    "CdtTrfTxInf/PmtTpInf/LclInstrm/Prtry",
+                    Direction.BOTH,
+                    false,
+                    false,
+                    Optional.of("inspect"),
+                    Map.of("literal", "USD", "kind", "X", "ref", "de4")),
+                mapping("amount", "de4", "CdtTrfTxInf/IntrBkSttlmAmt")));
+    IsoBridge bridge =
+        IsoBridge.builder()
+            .profile(profile)
+            .converter(inspect)
+            .clock(CLOCK)
+            .xmlFactory(new FakeXmlFactory(PACS_008, xml))
+            .build();
+
+    ConversionResult<Iso8583Message> result = bridge.toIso8583("<xml/>");
+
+    assertThat(result.value().field(3)).contains("990000|USD|X|100|0200|1|2026-11-13T10:00:00Z");
+    assertThat(result.value().presentFields()).containsExactlyInAnyOrder(3, 4);
+    assertThat(result.report().entries())
+        .extracting(ReportEntry::target)
+        .containsExactly("de3", "de4");
+  }
+
+  private static Profile reverseProfile() {
+    return new Profile(
+        "reverse",
+        1,
+        Optional.empty(),
+        MessageSpec.iso8583("0200"),
+        MessageSpec.iso20022(PACS_008, PACS_008_ROOT),
+        List.of(
+            new FieldMapping(
+                "amount",
+                "de4",
+                "CdtTrfTxInf/IntrBkSttlmAmt",
+                Direction.BOTH,
+                true,
+                false,
+                Optional.of("minor-units"),
+                Map.of("currency", "de49")),
+            new FieldMapping(
+                "currency",
+                "de49",
+                "CdtTrfTxInf/IntrBkSttlmAmt/@Ccy",
+                Direction.BOTH,
+                true,
+                false,
+                Optional.of("currency-code"),
+                Map.of()),
+            new FieldMapping(
+                "pan",
+                "de2",
+                "CdtTrfTxInf/DbtrAcct/Id/Othr/Id",
+                Direction.BOTH,
+                false,
+                true,
+                Optional.empty(),
+                Map.of()),
+            new FieldMapping(
+                "created",
+                "de7",
+                "GrpHdr/CreDtTm",
+                Direction.BOTH,
+                false,
+                false,
+                Optional.of("mmddhhmmss-utc"),
+                Map.of())),
+        List.of(new Profile.Constant("GrpHdr/NbOfTxs", "1")),
+        List.of(new Profile.Generated("GrpHdr/MsgId", "message-id")),
+        Set.of("de35"),
+        Profile.Unmapped.REPORT);
+  }
+
+  private static IsoBridge reverseBridge(Profile profile, XmlDocumentAccessFactory factory) {
+    return reverseBridge(List.of(profile), factory);
+  }
+
+  private static IsoBridge reverseBridge(List<Profile> profiles, XmlDocumentAccessFactory factory) {
+    IsoBridge.Builder builder =
+        IsoBridge.builder().clock(CLOCK).idGenerator(() -> "MSG-1").xmlFactory(factory);
+    profiles.forEach(builder::profile);
+    return builder.build();
+  }
+
+  private static final class FakeXmlFactory implements XmlDocumentAccessFactory {
+
+    private final String messageType;
+    private final XmlDocumentAccess document;
+    private final AtomicReference<String> root = new AtomicReference<>();
+
+    private FakeXmlFactory(String messageType, XmlDocumentAccess document) {
+      this.messageType = messageType;
+      this.document = document;
+    }
+
+    @Override
+    public XmlDocumentAccess create(String message, String rootPath) {
+      throw new UnsupportedOperationException("The reverse tests do not create documents");
+    }
+
+    @Override
+    public String messageType(String xml) {
+      return messageType;
+    }
+
+    @Override
+    public XmlDocumentAccess parse(String xml, String rootPath) {
+      root.set(rootPath);
+      return document;
+    }
+
+    private AtomicReference<String> root() {
+      return root;
+    }
   }
 
   private static MapIso8583Message request() {

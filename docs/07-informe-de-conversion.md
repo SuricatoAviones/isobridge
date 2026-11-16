@@ -46,6 +46,7 @@ Serializado a JSON:
 - El informe lleva el identificador y la versión del perfil, y el sentido de la conversión.
 - Una entrada `EXCLUDED` no lleva valor nunca: el constructor del informe lo rechaza.
 - Las entradas siguen el orden del perfil: primero los campos con valor que aplican al sentido, después `constants`, `generated` y `never` en el orden del YAML, y al final los campos no mapeados por número de campo.
+- En la vuelta, `source` es la ruta del XML que se leyó y `target` es el campo ISO 8583 que se escribió. Solo aparecen los mapeos con `direction` `both` o `reverse`; `constants`, `generated` y `never` son de la ida. Un campo `required` ausente lanza `RequiredFieldException`, igual que en la ida.
 - `INFERRED` lo declara el conversor: `mmddhhmmss-utc` y `local-date-time` infieren el año o el siglo que el origen no trae.
 - En la fase 1 no se emite `SUPPLEMENTARY`: los perfiles que piden `unmapped: supplementary` se rechazan al construir el puente.
 - Las notas (`note`) se escriben en inglés, como el resto del código.

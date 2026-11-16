@@ -7,12 +7,13 @@ import java.util.Set;
 import java.util.TreeMap;
 
 /**
- * Mutable in-memory {@link Iso8583Message} for tests: create it with an MTI and fill it with {@link
+ * Mutable in-memory {@link Iso8583Message}: create it with an MTI and fill it with {@link
  * #setField(int, String)}.
  *
- * <p>Two messages are equal when they carry the same MTI, the same element numbers and the same
- * values, which is what the round-trip tests compare; the comparison works against any {@code
- * Iso8583Message}, not only against this class. Not thread-safe.
+ * <p>The reverse conversion returns an instance of this class, and the tests use it as a simple
+ * source message too. Two messages are equal when they carry the same MTI, the same element numbers
+ * and the same values, which is what the round-trip tests compare; the comparison works against any
+ * {@code Iso8583Message}, not only against this class. Not thread-safe.
  *
  * <p>{@link #toString()} never includes field values, because some elements are sensitive: it
  * prints the MTI and the element numbers only.
