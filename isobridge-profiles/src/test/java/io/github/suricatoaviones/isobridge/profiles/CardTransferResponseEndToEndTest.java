@@ -102,6 +102,18 @@ class CardTransferResponseEndToEndTest {
   }
 
   @Test
+  void mapsAnApprovedResponseToAcscAndANarrativeReason() throws Exception {
+    IsoBridge bridge = bridge();
+    Iso8583Message approved = response();
+    approved.setField(39, "00");
+
+    ConversionResult<String> result = bridge.toIso20022(approved);
+
+    validateAgainstItsSchema(result.value());
+    assertThat(result.value()).contains("<TxSts>ACSC</TxSts>").contains("<Cd>NARR</Cd>");
+  }
+
+  @Test
   void roundTripsTheResponseExceptForTheResponseCode() throws Exception {
     IsoBridge bridge = bridge();
     Iso8583Message original = response();

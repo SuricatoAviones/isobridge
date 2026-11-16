@@ -80,7 +80,7 @@ Tabla del `lookup` de DE 39:
 
 | DE 39 | Significado | Estado | Motivo |
 | --- | --- | --- | --- |
-| 00 | Aprobada | ACSC | ACSC |
+| 00 | Aprobada | ACSC | NARR (provisional) |
 | 05 | No honrar | RJCT | MS03 |
 | 13 | Monto inválido | RJCT | AM12 |
 | 14 | Número de tarjeta inválido | RJCT | AC01 |
@@ -91,7 +91,7 @@ Tabla del `lookup` de DE 39:
 
 La tabla no es reversible sin pérdida: varios códigos de ISO 8583 caen en el mismo estado y motivo. DE 39 se declara por eso como campo no reversible: se escribe en dos mapeos `direction: forward` (estado y motivo) y la vuelta no lo recupera. El resto de campos de la respuesta viaja en datos suplementarios.
 
-Los códigos `ACSC`, `MS03`, `AM12`, `AC01`, `AM04`, `AM02`, `AM05` y `NARR` no se han contrastado todavía con la lista oficial de códigos de motivo de ISO 20022; el XSD solo limita su longitud a cuatro caracteres.
+Los códigos `MS03`, `AM12`, `AC01`, `AM04`, `AM02`, `AM05` y `NARR` están en la lista `ExternalStatusReason1Code` (edición 2Q2026). `ACSC` es un estado, no un motivo: por eso las aprobadas llevan `NARR` como motivo provisional, porque la lista de motivos no tiene un código de aprobación. El XSD solo limita la longitud a cuatro caracteres.
 
 ## Datos suplementarios
 

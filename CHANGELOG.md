@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.2.1] - 2026-11-16
+
+Corrects the reason code of an approved response and documents the verified
+reason codes.
+
+### Fixed
+
+- The response profile wrote `ACSC` in `StsRsnInf/Rsn/Cd`. `ACSC` is a status code, not a status reason; approved responses now use `NARR`, the only generic reason available. The status remains `ACSC`.
+- The reason codes `MS03`, `AM12`, `AC01`, `AM04`, `AM02`, `AM05` and `NARR` are now checked against `ExternalStatusReason1Code` (2Q2026 edition).
+
 ## [0.2.0] - 2026-11-16
 
 Adds the Spring Boot integration and the release polish.
@@ -34,6 +44,6 @@ First release. Covers phases 0 to 2 of the roadmap.
 ### Known limitations
 
 - Subfields such as `de48.01` are rejected until `Iso8583Message` exposes them.
-- DE 39 in the response profile is forward-only; the reason codes are pending verification against the official ISO 20022 list.
+- DE 39 in the response profile is forward-only; approved responses use `NARR` as a provisional reason because the status reason list has no approval code.
 - The core requires Java 17 at runtime; building requires JDK 21.
 - Not published to Maven Central yet.

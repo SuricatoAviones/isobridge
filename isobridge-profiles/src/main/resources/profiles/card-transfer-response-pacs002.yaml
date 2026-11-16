@@ -39,7 +39,7 @@ fields:
     direction: forward
     args:
       table:
-        "00": ACSC
+        "00": NARR
         "05": MS03
         "13": AM12
         "14": AC01

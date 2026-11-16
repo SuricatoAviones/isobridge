@@ -13,7 +13,7 @@ example profiles, not a fixed conversion table.
 
 ## Status
 
-Version 0.2.0 covers phases 0 to 3 of the roadmap:
+Version 0.2.1 covers phases 0 to 3 of the roadmap:
 
 - Converts an ISO 8583 message to ISO 20022 XML and back with the same profile.
 - Ships the `card-transfer-pacs008` and `card-transfer-response-pacs002` profiles.
