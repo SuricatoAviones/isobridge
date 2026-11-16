@@ -4,11 +4,13 @@
 
 La licencia del proyecto es Apache 2.0, la habitual en librerías Java y la misma de Spring. Eso descarta depender de código AGPL, como jPOS, en los módulos publicados.
 
+El adaptador de j8583 usa LGPL 3.0, no AGPL ni GPL. Vive en un módulo opcional: quien no lo declara no lo descarga, y el núcleo sigue sin depender de j8583.
+
 ## Dependencias
 
 | Dependencia | Para qué | Módulo | Licencia |
 | --- | --- | --- | --- |
-| [j8583](https://sourceforge.net/projects/j8583/) | Parseo de ISO 8583 | `isobridge-j8583`, opcional | Por confirmar |
+| [j8583](https://sourceforge.net/projects/j8583/) | Parseo de ISO 8583 | `isobridge-j8583`, opcional | LGPL 3.0 (confirmado en el POM de `net.sf.j8583:j8583:2.0.0`) |
 | [Prowide ISO 20022](https://github.com/prowide/prowide-iso20022) | Modelo Java de los mensajes, como adaptador opcional futuro | Ninguno por ahora | Apache 2.0 |
 | SnakeYAML | Lectura de perfiles | `isobridge-core` | Apache 2.0 |
 | Spring Boot | Autoconfiguración | Solo el starter | Apache 2.0 |
@@ -46,7 +48,6 @@ Cada una bloquea la fase indicada. Se cierra editando el documento afectado.
 
 | Pregunta | Bloquea | Documento afectado |
 | --- | --- | --- |
-| ¿Es compatible con Apache 2.0 la licencia de j8583? (SnakeYAML quedó confirmada: Apache 2.0) | Fase 2 | Este |
 | ¿Cuándo se amplía `Iso8583Message` para exponer subcampos, como `de48.01`? Hasta entonces el puente rechaza esos perfiles | Fase 2 | `03-modelo-de-clases.md` |
 | ¿Permiten los términos de ISO 20022 redistribuir sus XSD dentro del JAR publicado? Se incluyen en el repositorio; falta confirmarlo antes de publicar | Fase 4 | Este |
 | ¿Se añade un segundo perfil con los mensajes de tarjetas de ISO 20022 (familia `cain`), que corresponden mejor a una autorización que pacs.008? | Después de la fase 2 | `05-perfil-incluido.md` |

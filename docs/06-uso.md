@@ -115,4 +115,6 @@ IsoMessage raw = messageFactory.parseMessage(bytes, headerLength);
 Iso8583Message message = J8583Adapter.wrap(raw);
 ```
 
+`J8583Adapter` es una vista sobre el mensaje de j8583: no copia los campos. Intercambia valores de texto; los campos binarios, como el bloque de PIN, no se decodifican y no deben mapearse. Al escribir conserva el tipo y la longitud que el campo ya tenía; uno nuevo se escribe como alfabético. El módulo `isobridge-j8583` es opcional y usa j8583 2.0.0 (LGPL 3.0).
+
 Quien use otro parser implementa `Iso8583Message`, que son cuatro métodos (ver `03-modelo-de-clases.md`).
