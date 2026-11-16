@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import io.github.suricatoaviones.isobridge.ConversionException;
 import io.github.suricatoaviones.isobridge.ConversionResult;
 import io.github.suricatoaviones.isobridge.IsoBridge;
+import io.github.suricatoaviones.isobridge.SchemaValidationException;
 import io.github.suricatoaviones.isobridge.message.Iso8583Message;
 import io.github.suricatoaviones.isobridge.message.XmlDocumentAccess;
 import io.github.suricatoaviones.isobridge.profile.Direction;
@@ -119,6 +120,18 @@ class DomXmlDocumentAccessFactoryTest {
     XmlDocumentAccess document = factory.parse(xml, "/Document/FIToFICstmrCdtTrf");
 
     assertThat(document.read("GrpHdr/MsgId")).contains("MSG-1");
+  }
+
+  @Test
+  void rejectsAnXmlThatDoesNotValidateAgainstItsSchema() {
+    DomXmlDocumentAccessFactory factory = new DomXmlDocumentAccessFactory();
+    String xml =
+        "<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\">"
+            + "<FIToFICstmrCdtTrf/></Document>";
+
+    assertThatThrownBy(() -> factory.validate("pacs.008.001.08", xml))
+        .isInstanceOf(SchemaValidationException.class)
+        .hasMessageContaining("pacs.008.001.08");
   }
 
   @Test

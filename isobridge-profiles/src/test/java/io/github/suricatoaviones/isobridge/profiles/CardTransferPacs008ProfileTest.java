@@ -43,6 +43,6 @@ class CardTransferPacs008ProfileTest {
     assertThat(profile.generated())
         .containsExactly(new Profile.Generated("GrpHdr/MsgId", "message-id"));
     assertThat(profile.never()).containsExactly("de35", "de52");
-    assertThat(profile.unmapped()).isEqualTo(Profile.Unmapped.REPORT);
+    assertThat(profile.unmapped()).isEqualTo(Profile.Unmapped.SUPPLEMENTARY);
   }
 }

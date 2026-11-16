@@ -1,5 +1,6 @@
 package io.github.suricatoaviones.isobridge.message;
 
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -41,6 +42,36 @@ public interface XmlDocumentAccess {
    * @param value the text to write, never {@code null}; the empty string is a valid value
    */
   void write(String path, String value);
+
+  /**
+   * Writes one ISO 8583 data element that has no own ISO 20022 element, so it can travel as
+   * supplementary data and be recovered on the way back.
+   *
+   * <p>The implementation decides where the value goes, as long as {@link #readSupplementary()}
+   * returns it under the same number. It is only called when the profile uses {@code unmapped:
+   * supplementary}.
+   *
+   * @param number the ISO 8583 data element number, from 1 to 128
+   * @param value the value to write, never {@code null}
+   * @throws UnsupportedOperationException when the implementation cannot write supplementary data
+   */
+  default void writeSupplementary(int number, String value) {
+    throw new UnsupportedOperationException(
+        "This XML implementation cannot write supplementary data");
+  }
+
+  /**
+   * Returns the ISO 8583 data elements carried as supplementary data, indexed by number.
+   *
+   * <p>It is only called when the profile uses {@code unmapped: supplementary}. An implementation
+   * that cannot read supplementary data returns an empty map or throws, depending on whether the
+   * document format is supported.
+   *
+   * @return the supplementary values, in no particular order
+   */
+  default Map<Integer, String> readSupplementary() {
+    return Map.of();
+  }
 
   /**
    * Serializes the document.

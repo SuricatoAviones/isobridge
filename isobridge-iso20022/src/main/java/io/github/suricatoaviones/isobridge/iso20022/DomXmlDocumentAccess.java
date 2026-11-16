@@ -7,8 +7,10 @@ import io.github.suricatoaviones.isobridge.profile.ElementPath;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.TreeMap;
 import javax.xml.XMLConstants;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
@@ -37,6 +39,8 @@ import org.xml.sax.InputSource;
  * require.
  */
 public final class DomXmlDocumentAccess implements XmlDocumentAccess {
+
+  private static final String SUPPLEMENTARY_NAMESPACE = "urn:isobridge:supplementary";
 
   private final Document document;
   private final Element root;
@@ -183,6 +187,51 @@ public final class DomXmlDocumentAccess implements XmlDocumentAccess {
     } else {
       current.setTextContent(value);
     }
+  }
+
+  @Override
+  public void writeSupplementary(int number, String value) {
+    Objects.requireNonNull(value, "value");
+    Element supplementaryData = document.createElementNS(namespace, "SplmtryData");
+    insertInOrder(root, supplementaryData, rootType);
+    Element envelope = document.createElementNS(namespace, "Envlp");
+    supplementaryData.appendChild(envelope);
+    Element field = document.createElementNS(SUPPLEMENTARY_NAMESPACE, "isobridge:Field");
+    field.setAttributeNS(
+        XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "xmlns:isobridge", SUPPLEMENTARY_NAMESPACE);
+    field.setAttribute("number", Integer.toString(number));
+    field.setTextContent(value);
+    envelope.appendChild(field);
+  }
+
+  @Override
+  public Map<Integer, String> readSupplementary() {
+    Map<Integer, String> values = new TreeMap<>();
+    for (Node node = root.getFirstChild(); node != null; node = node.getNextSibling()) {
+      if (!(node instanceof Element supplementaryData)
+          || !"SplmtryData".equals(supplementaryData.getLocalName())
+          || !Objects.equals(namespace, supplementaryData.getNamespaceURI())) {
+        continue;
+      }
+      Element envelope = directChild(supplementaryData, "Envlp", namespace);
+      if (envelope == null) {
+        continue;
+      }
+      for (Node child = envelope.getFirstChild(); child != null; child = child.getNextSibling()) {
+        if (child instanceof Element field
+            && SUPPLEMENTARY_NAMESPACE.equals(field.getNamespaceURI())
+            && "Field".equals(field.getLocalName())) {
+          String number = field.getAttribute("number");
+          if (number.matches("[1-9][0-9]{0,2}")) {
+            int dataElement = Integer.parseInt(number);
+            if (dataElement >= 1 && dataElement <= 128) {
+              values.put(dataElement, field.getTextContent());
+            }
+          }
+        }
+      }
+    }
+    return Map.copyOf(values);
   }
 
   @Override

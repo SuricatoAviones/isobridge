@@ -51,4 +51,17 @@ public interface XmlDocumentAccessFactory {
     throw new UnsupportedOperationException(
         "This XML factory cannot read XML; implement messageType and parse to convert back");
   }
+
+  /**
+   * Validates an XML document against the XSD of its ISO 20022 message.
+   *
+   * <p>The default implementation does nothing, so a test factory does not need a schema. The
+   * production factory in {@code isobridge-iso20022} implements it.
+   *
+   * @param message the ISO 20022 message type, such as {@code pacs.008.001.08}
+   * @param xml the XML text
+   * @throws io.github.suricatoaviones.isobridge.SchemaValidationException when the XML does not
+   *     validate
+   */
+  default void validate(String message, String xml) {}
 }

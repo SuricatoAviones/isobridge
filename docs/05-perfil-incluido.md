@@ -2,7 +2,7 @@
 
 El perfil de ejemplo cubre una transferencia iniciada con tarjeta: la solicitud 0200 se convierte en pacs.008 y la respuesta 0210 en pacs.002. Es una propuesta razonable, no un estándar: cada red ajusta el suyo.
 
-> **Solicitud verificada** contra `pacs.008.001.08.xsd` el 13 de noviembre de 2026. La tabla de la respuesta sigue sin verificar: se revisará en la fase 2 contra `pacs.002.001.12.xsd`.
+> **Ambas tablas verificadas** contra `pacs.008.001.08.xsd` y `pacs.002.001.12.xsd` el 16 de noviembre de 2026. El XML que producen los dos perfiles valida contra su esquema. Los códigos de motivo externos siguen sin contrastarse con la lista oficial de ISO 20022.
 
 ## Solicitud: 0200 ↔ pacs.008
 
@@ -15,17 +15,17 @@ Las rutas son relativas a `CdtTrfTxInf`, salvo las que empiezan por `GrpHdr`.
 | DE 4 | Monto | `IntrBkSttlmAmt` | `minor-units` | Sí |
 | DE 7 | Fecha y hora de transmisión | `GrpHdr/CreDtTm` | `mmddhhmmss-utc` | Sí |
 | DE 11 | Número de auditoría (STAN) | `PmtId/InstrId` | Ninguna | Sí |
-| DE 12 y 13 | Hora y fecha local | `AccptncDtTm` | `local-date-time` | Sí |
+| DE 12 y 13 | Hora y fecha local | `AccptncDtTm` | `local-date-time` | No: solo vuelve DE 13 |
 | DE 32 | Institución adquirente | `DbtrAgt/FinInstnId/ClrSysMmbId/MmbId` | `trim` | Sí |
 | DE 37 | Referencia de recuperación (RRN) | `PmtId/EndToEndId` | Ninguna | Sí |
-| DE 41 | Terminal | Datos suplementarios (fase 2) | Ninguna | Sí |
-| DE 42 | Comercio | Datos suplementarios (fase 2) | Ninguna | Sí |
+| DE 41 | Terminal | Datos suplementarios | Ninguna | Sí |
+| DE 42 | Comercio | Datos suplementarios | Ninguna | Sí |
 | DE 43 | Nombre y ubicación del comercio | `RmtInf/Ustrd` | `trim` | No: se pierde el relleno |
 | DE 49 | Moneda | `IntrBkSttlmAmt/@Ccy` | `currency-code` | Sí |
 | DE 100 | Institución receptora | `CdtrAgt/FinInstnId/ClrSysMmbId/MmbId` | `trim` | Sí |
 | DE 103 | Cuenta destino | `CdtrAcct/Id/Othr/Id` | Ninguna | Sí |
 | DE 35, DE 52 | Pista 2 y bloque de PIN | No se copian nunca | | No, por diseño |
-| DE 55 | Datos del chip EMV | No se copia: queda como `DROPPED` | | No |
+| DE 55 | Datos del chip EMV | Datos suplementarios | | Sí |
 
 Elementos que pacs.008 exige y ISO 8583 no trae:
 
@@ -64,48 +64,65 @@ Comprobado el 13 de noviembre de 2026 contra `pacs.008.001.08.xsd`. Todas las ru
 
 Los campos de origen caben en sus destinos: DE 2 tiene como máximo 19 caracteres frente a 34, DE 32 y DE 100 llegan a 11 frente a 35, DE 37 a 12 frente a 35 y DE 43 a 40 frente a 140.
 
-Quedan sin verificar la tabla de pacs.002, la lista externa de códigos de motivo y el formato de los datos suplementarios, que corresponden a la fase 2.
+Queda sin verificar la lista externa de códigos de motivo de pacs.002. El formato de los datos suplementarios ya está decidido y probado contra el XSD.
 
 ## Respuesta: 0210 ↔ pacs.002
 
-| Campo | Contenido | Elemento pacs.002 | Conversión |
-| --- | --- | --- | --- |
-| DE 11 | STAN | `TxInfAndSts/OrgnlInstrId` | Ninguna |
-| DE 37 | RRN | `TxInfAndSts/OrgnlEndToEndId` | Ninguna |
-| DE 38 | Código de autorización | Datos suplementarios | Ninguna |
-| DE 39 | Código de respuesta | `TxInfAndSts/TxSts` y `StsRsnInf/Rsn/Cd` | `lookup` |
+| Campo | Contenido | Elemento pacs.002 | Conversión | Vuelve igual |
+| --- | --- | --- | --- | --- |
+| DE 11 | STAN | `TxInfAndSts/OrgnlInstrId` | Ninguna | Sí |
+| DE 37 | RRN | `TxInfAndSts/OrgnlEndToEndId` | Ninguna | Sí |
+| DE 38 | Código de autorización | Datos suplementarios | Ninguna | Sí |
+| DE 39 | Código de respuesta | `TxInfAndSts/TxSts` y `StsRsnInf/Rsn/Cd` | `lookup` | No: solo ida |
+| Resto de campos | Cualquier otro campo presente, salvo los de `never` | Datos suplementarios | Ninguna | Sí |
 
-Tabla inicial del `lookup` de DE 39:
+Tabla del `lookup` de DE 39:
 
 | DE 39 | Significado | Estado | Motivo |
 | --- | --- | --- | --- |
-| 00 | Aprobada | ACSC | |
+| 00 | Aprobada | ACSC | ACSC |
 | 05 | No honrar | RJCT | MS03 |
 | 13 | Monto inválido | RJCT | AM12 |
 | 14 | Número de tarjeta inválido | RJCT | AC01 |
 | 51 | Fondos insuficientes | RJCT | AM04 |
 | 61 | Excede el límite de monto | RJCT | AM02 |
 | 94 | Transmisión duplicada | RJCT | AM05 |
-| Otro | Sin equivalente | RJCT | NARR, con el código original en el texto |
+| Otro | Sin equivalente | RJCT | NARR |
 
-La tabla no es reversible sin pérdida: varios códigos de ISO 8583 caen en el mismo motivo. Para la vuelta, el código original viaja en datos suplementarios.
+La tabla no es reversible sin pérdida: varios códigos de ISO 8583 caen en el mismo estado y motivo. DE 39 se declara por eso como campo no reversible: se escribe en dos mapeos `direction: forward` (estado y motivo) y la vuelta no lo recupera. El resto de campos de la respuesta viaja en datos suplementarios.
 
-DE 39 escribe en dos elementos a la vez (estado y motivo). El formato del perfil debe permitirlo; la forma concreta, un `lookup` con salida múltiple o dos mapeos sobre el mismo campo, se decide al implementar la fase 2 y se documenta en `04-formato-del-perfil.md`.
+Los códigos `ACSC`, `MS03`, `AM12`, `AC01`, `AM04`, `AM02`, `AM05` y `NARR` no se han contrastado todavía con la lista oficial de códigos de motivo de ISO 20022; el XSD solo limita su longitud a cuatro caracteres.
 
 ## Datos suplementarios
 
-Los campos sin elemento propio en ISO 20022 (terminal, comercio, código de autorización, código de respuesta original) viajan en `SplmtryData`, para que la vuelta los recupere. El formato exacto de ese bloque es una pregunta abierta en `10-dependencias-y-preguntas.md`. Mientras no exista, el perfil de la solicitud no incluye DE 41 ni DE 42: si vienen, el informe los marca `DROPPED`.
+Los campos sin elemento propio en ISO 20022 viajan en `SplmtryData`, para que la vuelta los recupere. Cada campo ocupa un bloque:
+
+```xml
+<SplmtryData>
+  <Envlp>
+    <isobridge:Field xmlns:isobridge="urn:isobridge:supplementary" number="41">TERM0001</isobridge:Field>
+  </Envlp>
+</SplmtryData>
+```
+
+`Envlp` admite un único hijo de cualquier namespace (`xs:any`), por eso hay un `SplmtryData` por campo. La vuelta lee todos los bloques y escribe cada valor en su elemento ISO 8583; si un campo ya se había mapeado, el valor mapeado gana. El informe marca estos campos como `SUPPLEMENTARY`, que no cuenta como pérdida. El número de tarjeta se enmascara también en este caso.
 
 ## Prueba de extremo a extremo
 
-La prueba de la fase 1 parte de `isobridge-profiles/src/test/resources/messages/0200-card-transfer.properties`, convierte el mensaje con el perfil incluido, valida el XML contra `pacs.008.001.08.xsd` y comprueba el informe completo. Los valores de ejemplo son ficticios y usan rangos de tarjeta de prueba, nunca tarjetas reales.
+Las pruebas parten de `isobridge-profiles/src/test/resources/messages/0200-card-transfer.properties` y `0210-card-transfer.properties`, convierten cada mensaje con su perfil, validan el XML contra su XSD y comprueban el informe completo. Los valores de ejemplo son ficticios y usan rangos de tarjeta de prueba, nunca tarjetas reales.
 
-El resumen esperado es:
+Resumen de la solicitud:
 
 ```text
-card-transfer-pacs008 v1 ISO8583_TO_ISO20022: 10 mapped, 5 defaulted, 1 generated, 2 inferred, 3 dropped (de41, de42, de55), 2 excluded
+card-transfer-pacs008 v1 ISO8583_TO_ISO20022: 10 mapped, 5 defaulted, 1 generated, 3 supplementary, 2 inferred, 2 excluded
 ```
 
-La prueba también comprueba que el número de tarjeta sale enmascarado cuando el informe lleva valores y que el identificador generado por defecto cabe en `Max35Text`.
+Resumen de la respuesta:
 
-La fase 2 añadirá la prueba de ida y vuelta: convertir el XML de vuelta a ISO 8583 y comprobar que el mensaje final es igual al inicial, salvo en los campos que estas tablas declaren como no reversibles.
+```text
+card-transfer-response-pacs002 v1 ISO8583_TO_ISO20022: 4 mapped, 2 generated, 13 supplementary
+```
+
+La prueba de la solicitud también comprueba que el número de tarjeta sale enmascarado cuando el informe lleva valores y que el identificador generado por defecto cabe en `Max35Text`.
+
+La prueba de ida y vuelta convierte el XML de vuelta a ISO 8583 y comprueba que el mensaje final es igual al inicial salvo en los campos declarados como no reversibles: en la solicitud, DE 12 (la vuelta de `local-date-time` solo recupera DE 13) y DE 35 y DE 52 (`never`); en la respuesta, DE 39 (dos `lookup` solo de ida).

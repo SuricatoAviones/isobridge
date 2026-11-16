@@ -58,6 +58,19 @@ public final class Masking {
         + value.substring(value.length() - KEPT_AT_THE_END);
   }
 
+  /**
+   * Masks an unmapped data element that travels as supplementary data. Only the card number has a
+   * rule; the profile cannot mark an unmapped field as sensitive.
+   *
+   * @param number the ISO 8583 data element number
+   * @param value the raw value
+   * @return the value to store in the report
+   */
+  public static String maskSupplementary(int number, String value) {
+    Objects.requireNonNull(value, "value");
+    return number == 2 ? maskCardNumber(value) : value;
+  }
+
   private static boolean isCardNumber(String reference) {
     return FieldReference.parse(reference) instanceof FieldReference.DataElement element
         && element.number() == 2;

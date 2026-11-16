@@ -1,0 +1,61 @@
+profile: card-transfer-response-pacs002
+version: 1
+description: Card response (0210) to pacs.002
+
+source:
+  standard: iso8583
+  mti: "0210"
+target:
+  standard: iso20022
+  message: pacs.002.001.12
+  root: /Document/FIToFIPmtStsRpt
+
+fields:
+  - id: stan
+    from: de11
+    to: TxInfAndSts/OrgnlInstrId
+  - id: rrn
+    from: de37
+    to: TxInfAndSts/OrgnlEndToEndId
+  - id: status
+    from: de39
+    to: TxInfAndSts/TxSts
+    convert: lookup
+    direction: forward
+    args:
+      table:
+        "00": ACSC
+        "05": RJCT
+        "13": RJCT
+        "14": RJCT
+        "51": RJCT
+        "61": RJCT
+        "94": RJCT
+      default: RJCT
+  - id: reason
+    from: de39
+    to: TxInfAndSts/StsRsnInf/Rsn/Cd
+    convert: lookup
+    direction: forward
+    args:
+      table:
+        "00": ACSC
+        "05": MS03
+        "13": AM12
+        "14": AC01
+        "51": AM04
+        "61": AM02
+        "94": AM05
+      default: NARR
+
+generated:
+  - to: GrpHdr/MsgId
+    with: message-id
+  - to: GrpHdr/CreDtTm
+    with: now
+
+never:
+  - de35
+  - de52
+
+unmapped: supplementary

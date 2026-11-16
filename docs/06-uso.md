@@ -22,11 +22,11 @@ if (report.hasLosses()) {
     log.warn("Conversion with losses: {}", report.summary());
 }
 
-// Sentido contrario (fase 2)
+// Sentido contrario
 ConversionResult<Iso8583Message> back = bridge.toIso8583(xml);
 ```
 
-La factoría XML es obligatoria: el núcleo no depende de `isobridge-iso20022`. En producción se usa `DomXmlDocumentAccessFactory`, que elige el XSD incluido por el tipo de mensaje; en pruebas, una implementación propia de `XmlDocumentAccessFactory`. Para la vuelta, la factoría debe implementar además `messageType(xml)` y `parse(xml, rootPath)`; `DomXmlDocumentAccessFactory` ya lo hace, y una factoría que solo escriba puede seguir siendo una lambda porque esos métodos tienen implementación por defecto. `reportValues(true)` añade a cada entrada su valor enmascarado, y está desactivado por defecto.
+La factoría XML es obligatoria: el núcleo no depende de `isobridge-iso20022`. En producción se usa `DomXmlDocumentAccessFactory`, que elige el XSD incluido por el tipo de mensaje; en pruebas, una implementación propia de `XmlDocumentAccessFactory`. Para la vuelta, la factoría debe implementar además `messageType(xml)` y `parse(xml, rootPath)`; `DomXmlDocumentAccessFactory` ya lo hace, y una factoría que solo escriba puede seguir siendo una lambda porque esos métodos tienen implementación por defecto. `reportValues(true)` añade a cada entrada su valor enmascarado, y está desactivado por defecto. `strict(true)` convierte cualquier pérdida en una excepción, y `validateXsd(true)` valida el XML en los dos sentidos. El starter activa la validación por defecto; en Java puro está desactivada salvo que se pida.
 
 Con varios perfiles cargados, el puente elige el que coincide con el MTI del mensaje de entrada o con el tipo de mensaje del XML. Si ninguno coincide, lanza `NoProfileException`. Dos perfiles que coinciden con el mismo mensaje son un error de configuración y se detectan al construir el puente.
 
@@ -76,8 +76,8 @@ FieldConverter binToMemberId() {
 | Propiedad | Por defecto | Significado |
 | --- | --- | --- |
 | `isobridge.profiles` | Lista vacía | Ubicaciones de los perfiles a cargar |
-| `isobridge.strict` | `false` | Falla si se pierde un campo `required` |
-| `isobridge.validate-xsd` | `true` | Valida el XML generado contra su XSD |
+| `isobridge.strict` | `false` | Falla si el informe contiene pérdidas (`DROPPED`) |
+| `isobridge.validate-xsd` | `true` | Valida el XML generado y el recibido contra su XSD |
 | `isobridge.mask-sensitive` | `true` | Enmascara los valores sensibles en el informe |
 | `isobridge.report-values` | `false` | Incluye los valores en el informe |
 | `isobridge.enabled` | `true` | Activa o desactiva la autoconfiguración |

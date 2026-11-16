@@ -40,18 +40,21 @@ public final class IsoBridge {
   private final ForwardMappingEngine forwardEngine;
   private final ReverseMappingEngine reverseEngine;
   private final XmlDocumentAccessFactory xmlFactory;
+  private final boolean validateXsd;
 
   private IsoBridge(
       Map<String, Profile> profilesByMti,
       Map<String, Profile> profilesByMessage,
       ForwardMappingEngine forwardEngine,
       ReverseMappingEngine reverseEngine,
-      XmlDocumentAccessFactory xmlFactory) {
+      XmlDocumentAccessFactory xmlFactory,
+      boolean validateXsd) {
     this.profilesByMti = profilesByMti;
     this.profilesByMessage = profilesByMessage;
     this.forwardEngine = forwardEngine;
     this.reverseEngine = reverseEngine;
     this.xmlFactory = xmlFactory;
+    this.validateXsd = validateXsd;
   }
 
   /** Creates a builder with the built-in converters, the UTC clock and random identifiers. */
@@ -74,7 +77,11 @@ public final class IsoBridge {
     if (profile == null) {
       throw new NoProfileException("No profile matches the MTI '" + message.mti() + "'");
     }
-    return forwardEngine.convert(profile, message);
+    ConversionResult<String> result = forwardEngine.convert(profile, message);
+    if (validateXsd) {
+      xmlFactory.validate(profile.target().message().orElseThrow(), result.value());
+    }
+    return result;
   }
 
   /**
@@ -95,6 +102,9 @@ public final class IsoBridge {
     if (profile == null) {
       throw new NoProfileException("No profile matches the message '" + messageType + "'");
     }
+    if (validateXsd) {
+      xmlFactory.validate(messageType, xml);
+    }
     XmlDocumentAccess document = xmlFactory.parse(xml, profile.target().root().orElseThrow());
     return reverseEngine.convert(profile, document);
   }
@@ -109,6 +119,8 @@ public final class IsoBridge {
     private Supplier<String> idGenerator = () -> UUID.randomUUID().toString().replace("-", "");
     private XmlDocumentAccessFactory xmlFactory;
     private boolean reportValues;
+    private boolean strict;
+    private boolean validateXsd;
 
     private Builder() {}
 
@@ -182,6 +194,34 @@ public final class IsoBridge {
     }
 
     /**
+     * Whether a conversion with losses fails instead of returning its report. Off by default.
+     *
+     * <p>When it is on, any {@code DROPPED} entry throws {@link ConversionException} with the
+     * summary of the report.
+     *
+     * @param strict {@code true} to fail on any loss
+     * @return this builder
+     */
+    public Builder strict(boolean strict) {
+      this.strict = strict;
+      return this;
+    }
+
+    /**
+     * Whether the XML is validated against its XSD, in both directions. Off by default.
+     *
+     * <p>The factory performs the validation; the one in {@code isobridge-iso20022} uses the
+     * bundled schema. A factory that does not implement validation ignores it.
+     *
+     * @param validateXsd {@code true} to validate the XML
+     * @return this builder
+     */
+    public Builder validateXsd(boolean validateXsd) {
+      this.validateXsd = validateXsd;
+      return this;
+    }
+
+    /**
      * Validates the configuration and creates the bridge.
      *
      * @return the bridge
@@ -220,20 +260,15 @@ public final class IsoBridge {
         }
       }
       ForwardMappingEngine engine =
-          new ForwardMappingEngine(converters, clock, idGenerator, xmlFactory, reportValues);
+          new ForwardMappingEngine(
+              converters, clock, idGenerator, xmlFactory, reportValues, strict);
       ReverseMappingEngine reverseEngine =
-          new ReverseMappingEngine(converters, clock, reportValues);
+          new ReverseMappingEngine(converters, clock, reportValues, strict);
       return new IsoBridge(
-          Map.copyOf(byMti), Map.copyOf(byMessage), engine, reverseEngine, xmlFactory);
+          Map.copyOf(byMti), Map.copyOf(byMessage), engine, reverseEngine, xmlFactory, validateXsd);
     }
 
     private void validate(Profile profile) {
-      if (profile.unmapped() == Profile.Unmapped.SUPPLEMENTARY) {
-        throw new IsoBridgeException(
-            "The profile '"
-                + profile.id()
-                + "' uses unmapped: supplementary, which is not supported yet");
-      }
       for (FieldMapping field : profile.fields()) {
         rejectSubfield(profile, field.from(), "the mapping '" + field.id() + "'");
         if (field.convert().isPresent()) {

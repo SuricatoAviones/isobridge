@@ -47,9 +47,6 @@ Cada una bloquea la fase indicada. Se cierra editando el documento afectado.
 | Pregunta | Bloquea | Documento afectado |
 | --- | --- | --- |
 | ¿Es compatible con Apache 2.0 la licencia de j8583? (SnakeYAML quedó confirmada: Apache 2.0) | Fase 2 | Este |
-| ¿Las rutas y los códigos del perfil incluido coinciden con los XSD? `pacs.008.001.08` está verificado; falta `pacs.002.001.12` | Fase 2 | `05-perfil-incluido.md` |
-| ¿Cómo se representan los datos suplementarios para que la vuelta recupere los campos sin elemento propio? | Fase 2 | `05-perfil-incluido.md` |
-| ¿Cómo expresa el perfil un campo que escribe en dos elementos, como DE 39? | Fase 2 | `04-formato-del-perfil.md` |
 | ¿Cuándo se amplía `Iso8583Message` para exponer subcampos, como `de48.01`? Hasta entonces el puente rechaza esos perfiles | Fase 2 | `03-modelo-de-clases.md` |
 | ¿Permiten los términos de ISO 20022 redistribuir sus XSD dentro del JAR publicado? Se incluyen en el repositorio; falta confirmarlo antes de publicar | Fase 4 | Este |
 | ¿Se añade un segundo perfil con los mensajes de tarjetas de ISO 20022 (familia `cain`), que corresponden mejor a una autorización que pacs.008? | Después de la fase 2 | `05-perfil-incluido.md` |
@@ -68,3 +65,7 @@ Cada una bloquea la fase indicada. Se cierra editando el documento afectado.
 - `IsoBridge.toIso8583` devuelve un `MapIso8583Message`, que pasa de `src/test` a `src/main`, con el MTI de `source.mti` del perfil.
 - En la vuelta, los `args` se resuelven contra el mensaje ISO 8583 que se está construyendo. Si el campo referenciado aún no existe, el motor convierte antes su mapeo; un ciclo detiene la conversión con un mensaje claro.
 - El informe de la vuelta intercambia `source` y `target`: `source` es la ruta XML y `target` el campo ISO 8583. Solo emite entradas `MAPPED`; `constants`, `generated` y `never` no participan.
+- Los datos suplementarios usan un bloque `SplmtryData` por campo, con un hijo en el namespace `urn:isobridge:supplementary` y el número en el atributo `number`. `Envlp` solo admite un hijo (`xs:any` con `maxOccurs` 1), de ahí un bloque por campo.
+- DE 39 se resuelve con dos `lookup` de solo ida, uno para `TxSts` y otro para `StsRsnInf/Rsn/Cd`. La vuelta no recupera DE 39 y el campo se declara no reversible; los códigos de motivo siguen sin contrastar con la lista oficial.
+- El modo estricto falla ante cualquier entrada `DROPPED`, no solo ante campos `required`. Las entradas `SUPPLEMENTARY` no cuentan como pérdida.
+- La validación XSD es opcional con `validateXsd(true)`; el starter la activa por defecto. La factoría XML recibe `validate(message, xml)` y `DomXmlDocumentAccessFactory` usa los XSD incluidos.

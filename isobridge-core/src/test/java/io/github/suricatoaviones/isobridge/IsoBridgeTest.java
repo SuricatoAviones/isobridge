@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
@@ -204,17 +205,137 @@ class IsoBridgeTest {
   }
 
   @Test
-  void rejectsSupplementaryProfilesAtBuildTime() {
+  void carriesUnmappedFieldsAsSupplementaryData() {
+    RecordingXmlDocumentAccess xml = new RecordingXmlDocumentAccess();
     Profile profile =
         profile(
             "supplementary",
             "0200",
             Profile.Unmapped.SUPPLEMENTARY,
             List.of(mapping("amount", "de4", "CdtTrfTxInf/IntrBkSttlmAmt")));
+    IsoBridge bridge = bridge(profile, xml);
+    MapIso8583Message message = new MapIso8583Message("0200");
+    message.setField(4, "100");
+    message.setField(41, "TERM-1");
+    message.setField(42, "MERCHANT");
+    message.setField(55, "EMV");
 
-    assertThatThrownBy(() -> bridge(profile, new RecordingXmlDocumentAccess()))
-        .isInstanceOf(IsoBridgeException.class)
-        .hasMessageContaining("supplementary");
+    ConversionResult<String> result = bridge.toIso20022(message);
+
+    assertThat(xml.supplementary())
+        .containsExactlyInAnyOrderEntriesOf(Map.of(41, "TERM-1", 42, "MERCHANT", 55, "EMV"));
+    assertThat(result.report().entries())
+        .extracting(ReportEntry::source, ReportEntry::status)
+        .containsExactly(
+            tuple("de4", Status.MAPPED),
+            tuple("de41", Status.SUPPLEMENTARY),
+            tuple("de42", Status.SUPPLEMENTARY),
+            tuple("de55", Status.SUPPLEMENTARY));
+    assertThat(result.report().lossless()).isTrue();
+  }
+
+  @Test
+  void recoversSupplementaryFieldsOnTheWayBack() {
+    RecordingXmlDocumentAccess xml = new RecordingXmlDocumentAccess();
+    xml.write("CdtTrfTxInf/IntrBkSttlmAmt", "100");
+    xml.putSupplementary(4, "999");
+    xml.putSupplementary(41, "TERM-1");
+    xml.putSupplementary(42, "MERCHANT");
+    Profile profile =
+        profile(
+            "supplementary",
+            "0200",
+            Profile.Unmapped.SUPPLEMENTARY,
+            List.of(mapping("amount", "de4", "CdtTrfTxInf/IntrBkSttlmAmt")));
+    IsoBridge bridge = reverseBridge(profile, new FakeXmlFactory(PACS_008, xml));
+
+    ConversionResult<Iso8583Message> result = bridge.toIso8583("<xml/>");
+
+    assertThat(result.value().presentFields()).containsExactlyInAnyOrder(4, 41, 42);
+    assertThat(result.value().field(4)).contains("100");
+    assertThat(result.value().field(41)).contains("TERM-1");
+    assertThat(result.value().field(42)).contains("MERCHANT");
+    assertThat(result.report().entries())
+        .extracting(ReportEntry::status)
+        .containsExactly(Status.MAPPED, Status.SUPPLEMENTARY, Status.SUPPLEMENTARY);
+    assertThat(result.report().lossless()).isTrue();
+  }
+
+  @Test
+  void failsOnAnyLossInStrictMode() {
+    Profile profile =
+        profile(
+            "strict-mode",
+            "0200",
+            Profile.Unmapped.REPORT,
+            List.of(mapping("amount", "de4", "CdtTrfTxInf/IntrBkSttlmAmt")));
+    IsoBridge bridge =
+        IsoBridge.builder()
+            .profile(profile)
+            .clock(CLOCK)
+            .idGenerator(() -> "MSG-1")
+            .xmlFactory((message, root) -> new RecordingXmlDocumentAccess())
+            .strict(true)
+            .build();
+    MapIso8583Message message = new MapIso8583Message("0200");
+    message.setField(4, "100");
+    message.setField(55, "emv");
+
+    assertThatThrownBy(() -> bridge.toIso20022(message))
+        .isInstanceOf(ConversionException.class)
+        .hasMessageContaining("de55")
+        .hasMessageContaining("lost fields");
+  }
+
+  @Test
+  void returnsAReportWithoutLossesInStrictMode() {
+    Profile profile =
+        profile(
+            "strict-mode",
+            "0200",
+            Profile.Unmapped.REPORT,
+            List.of(mapping("amount", "de4", "CdtTrfTxInf/IntrBkSttlmAmt")));
+    IsoBridge bridge =
+        IsoBridge.builder()
+            .profile(profile)
+            .clock(CLOCK)
+            .idGenerator(() -> "MSG-1")
+            .xmlFactory((message, root) -> new RecordingXmlDocumentAccess())
+            .strict(true)
+            .build();
+    MapIso8583Message message = new MapIso8583Message("0200");
+    message.setField(4, "100");
+
+    ConversionResult<String> result = bridge.toIso20022(message);
+
+    assertThat(result.report().lossless()).isTrue();
+  }
+
+  @Test
+  void validatesTheXmlInBothDirectionsWhenAsked() {
+    RecordingXmlDocumentAccess xml = new RecordingXmlDocumentAccess();
+    xml.write("CdtTrfTxInf/IntrBkSttlmAmt", "100");
+    FakeXmlFactory factory = new FakeXmlFactory(PACS_008, xml);
+    Profile profile =
+        profile(
+            "validated",
+            "0200",
+            Profile.Unmapped.REPORT,
+            List.of(mapping("amount", "de4", "CdtTrfTxInf/IntrBkSttlmAmt")));
+    IsoBridge bridge =
+        IsoBridge.builder()
+            .profile(profile)
+            .clock(CLOCK)
+            .xmlFactory(factory)
+            .validateXsd(true)
+            .build();
+    MapIso8583Message message = new MapIso8583Message("0200");
+    message.setField(4, "100");
+
+    bridge.toIso20022(message);
+    bridge.toIso8583("<xml/>");
+
+    assertThat(factory.validated()).containsExactly(PACS_008, PACS_008);
   }
 
   @Test
@@ -1048,7 +1169,9 @@ class IsoBridgeTest {
 
     private final String messageType;
     private final XmlDocumentAccess document;
+    private final XmlDocumentAccess created = new RecordingXmlDocumentAccess();
     private final AtomicReference<String> root = new AtomicReference<>();
+    private final List<String> validated = new ArrayList<>();
 
     private FakeXmlFactory(String messageType, XmlDocumentAccess document) {
       this.messageType = messageType;
@@ -1057,7 +1180,7 @@ class IsoBridgeTest {
 
     @Override
     public XmlDocumentAccess create(String message, String rootPath) {
-      throw new UnsupportedOperationException("The reverse tests do not create documents");
+      return created;
     }
 
     @Override
@@ -1071,8 +1194,17 @@ class IsoBridgeTest {
       return document;
     }
 
+    @Override
+    public void validate(String message, String xml) {
+      validated.add(message);
+    }
+
     private AtomicReference<String> root() {
       return root;
+    }
+
+    private List<String> validated() {
+      return validated;
     }
   }
 
@@ -1155,6 +1287,7 @@ class IsoBridgeTest {
   private static final class RecordingXmlDocumentAccess implements XmlDocumentAccess {
 
     private final Map<String, String> values = new LinkedHashMap<>();
+    private final Map<Integer, String> supplementary = new TreeMap<>();
 
     @Override
     public Optional<String> read(String path) {
@@ -1167,12 +1300,30 @@ class IsoBridgeTest {
     }
 
     @Override
+    public void writeSupplementary(int number, String value) {
+      supplementary.put(number, value);
+    }
+
+    @Override
+    public Map<Integer, String> readSupplementary() {
+      return Map.copyOf(supplementary);
+    }
+
+    @Override
     public String toXml() {
       return "<document/>";
     }
 
     private Map<String, String> values() {
       return values;
+    }
+
+    private Map<Integer, String> supplementary() {
+      return supplementary;
+    }
+
+    private void putSupplementary(int number, String value) {
+      supplementary.put(number, value);
     }
   }
 

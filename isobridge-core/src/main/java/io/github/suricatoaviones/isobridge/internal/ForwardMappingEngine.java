@@ -16,6 +16,7 @@ import io.github.suricatoaviones.isobridge.profile.FieldMapping;
 import io.github.suricatoaviones.isobridge.profile.FieldReference;
 import io.github.suricatoaviones.isobridge.profile.Profile;
 import io.github.suricatoaviones.isobridge.report.ConversionReport;
+import io.github.suricatoaviones.isobridge.report.Masking;
 import io.github.suricatoaviones.isobridge.report.ReportEntry;
 import io.github.suricatoaviones.isobridge.report.Status;
 import java.time.Clock;
@@ -43,6 +44,7 @@ public final class ForwardMappingEngine {
   private final Supplier<String> idGenerator;
   private final XmlDocumentAccessFactory xmlFactory;
   private final boolean reportValues;
+  private final boolean strict;
 
   /**
    * Creates the engine.
@@ -52,18 +54,21 @@ public final class ForwardMappingEngine {
    * @param idGenerator the generator of {@code message-id} values
    * @param xmlFactory the factory that creates the target document
    * @param reportValues whether the report entries carry their masked values
+   * @param strict whether a conversion with losses must fail
    */
   public ForwardMappingEngine(
       ConverterRegistry converters,
       Clock clock,
       Supplier<String> idGenerator,
       XmlDocumentAccessFactory xmlFactory,
-      boolean reportValues) {
+      boolean reportValues,
+      boolean strict) {
     this.converters = Objects.requireNonNull(converters, "converters");
     this.clock = Objects.requireNonNull(clock, "clock");
     this.idGenerator = Objects.requireNonNull(idGenerator, "idGenerator");
     this.xmlFactory = Objects.requireNonNull(xmlFactory, "xmlFactory");
     this.reportValues = reportValues;
+    this.strict = strict;
   }
 
   /**
@@ -158,13 +163,27 @@ public final class ForwardMappingEngine {
         }
       }
       case SUPPLEMENTARY ->
-          throw new IsoBridgeException(
-              "Supplementary data is not supported yet; the profile must use report or fail");
+          unmapped.forEach(number -> {
+            String value = message.field(number).orElseThrow();
+            xml.writeSupplementary(number, value);
+            entries.add(
+                new ReportEntry(
+                    null,
+                    "de" + number,
+                    "SplmtryData",
+                    Status.SUPPLEMENTARY,
+                    null,
+                    reportValues ? Masking.maskSupplementary(number, value) : null,
+                    null));
+          });
     }
 
     ConversionReport report =
         ConversionReport.of(
             profile.id(), profile.version(), ConversionDirection.ISO8583_TO_ISO20022, entries);
+    if (strict && report.hasLosses()) {
+      throw new ConversionException("The conversion lost fields: " + report.summary());
+    }
     return new ConversionResult<>(xml.toXml(), report);
   }
 

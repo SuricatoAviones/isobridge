@@ -7,6 +7,7 @@ import io.github.suricatoaviones.isobridge.ConversionException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.junit.jupiter.api.Test;
@@ -171,6 +172,47 @@ class DomXmlDocumentAccessTest {
     assertThatThrownBy(() -> DomXmlDocumentAccess.parse("<Document>"))
         .isInstanceOf(ConversionException.class)
         .hasMessageContaining("Cannot read the XML");
+  }
+
+  @Test
+  void writesAndReadsSupplementaryData() {
+    DomXmlDocumentAccess document = pacs008();
+
+    document.writeSupplementary(41, "TERM-1");
+    document.writeSupplementary(42, "MERCHANT");
+
+    assertThat(document.readSupplementary())
+        .containsExactlyInAnyOrderEntriesOf(Map.of(41, "TERM-1", 42, "MERCHANT"));
+    String xml = document.toXml();
+    assertThat(xml).contains("urn:isobridge:supplementary").contains("number=\"41\"");
+    assertThat(DomXmlDocumentAccess.parse(xml, PACS_008).readSupplementary())
+        .containsExactlyInAnyOrderEntriesOf(Map.of(41, "TERM-1", 42, "MERCHANT"));
+  }
+
+  @Test
+  void placesSupplementaryDataAfterTheMappedElements() {
+    DomXmlDocumentAccess document = pacs008();
+
+    document.writeSupplementary(41, "TERM-1");
+    document.write("GrpHdr/MsgId", "MSG-1");
+    document.write("CdtTrfTxInf/IntrBkSttlmAmt", "100");
+
+    Element root = child(rootOf(document.toXml()), "FIToFICstmrCdtTrf");
+    assertThat(childNames(root)).containsExactly("GrpHdr", "CdtTrfTxInf", "SplmtryData");
+  }
+
+  @Test
+  void ignoresAnUnknownSupplementaryNumber() {
+    String xml =
+        "<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\">"
+            + "<FIToFICstmrCdtTrf><SplmtryData><Envlp>"
+            + "<isobridge:Field xmlns:isobridge=\"urn:isobridge:supplementary\" number=\"0\">X</isobridge:Field>"
+            + "<isobridge:Field xmlns:isobridge=\"urn:isobridge:supplementary\" number=\"41\">TERM-1</isobridge:Field>"
+            + "</Envlp></SplmtryData></FIToFICstmrCdtTrf></Document>";
+
+    DomXmlDocumentAccess document = DomXmlDocumentAccess.parse(xml, PACS_008);
+
+    assertThat(document.readSupplementary()).containsExactly(Map.entry(41, "TERM-1"));
   }
 
   @Test

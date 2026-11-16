@@ -8,6 +8,7 @@ import io.github.suricatoaviones.isobridge.ConversionResult;
 import io.github.suricatoaviones.isobridge.IsoBridge;
 import io.github.suricatoaviones.isobridge.iso20022.DomXmlDocumentAccessFactory;
 import io.github.suricatoaviones.isobridge.message.Iso8583Message;
+import io.github.suricatoaviones.isobridge.message.MapIso8583Message;
 import io.github.suricatoaviones.isobridge.profile.Profile;
 import io.github.suricatoaviones.isobridge.report.ConversionReport;
 import io.github.suricatoaviones.isobridge.report.ReportEntry;
@@ -25,6 +26,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.IntStream;
 import javax.xml.XMLConstants;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
@@ -64,14 +66,16 @@ class CardTransferEndToEndTest {
         .contains("<Ustrd>MERCHANT NAME  LONDON</Ustrd>")
         .contains("<ChrgBr>SHAR</ChrgBr>")
         .contains("<Nm>Cardholder</Nm>")
-        .contains("<Nm>Merchant</Nm>");
+        .contains("<Nm>Merchant</Nm>")
+        .contains("urn:isobridge:supplementary")
+        .contains("number=\"41\"");
 
     ConversionReport report = result.report();
     assertThat(report.profile()).isEqualTo("card-transfer-pacs008");
     assertThat(report.profileVersion()).isEqualTo(1);
     assertThat(report.direction()).isEqualTo(ConversionDirection.ISO8583_TO_ISO20022);
-    assertThat(report.lossless()).isFalse();
-    assertThat(report.hasLosses()).isTrue();
+    assertThat(report.lossless()).isTrue();
+    assertThat(report.hasLosses()).isFalse();
     assertThat(report.entries()).allMatch(entry -> entry.value() == null);
     assertThat(report.entries())
         .extracting(
@@ -116,16 +120,14 @@ class CardTransferEndToEndTest {
             tuple("GrpHdr/MsgId", "GrpHdr/MsgId", Status.GENERATED, null, null),
             tuple("de35", null, Status.EXCLUDED, null, "Listed in never"),
             tuple("de52", null, Status.EXCLUDED, null, "Listed in never"),
-            tuple("de41", null, Status.DROPPED, null, "No mapping in profile"),
-            tuple("de42", null, Status.DROPPED, null, "No mapping in profile"),
-            tuple("de55", null, Status.DROPPED, null, "No mapping in profile"));
-    assertThat(report.dropped())
-        .extracting(ReportEntry::source)
-        .containsExactly("de41", "de42", "de55");
+            tuple("de41", "SplmtryData", Status.SUPPLEMENTARY, null, null),
+            tuple("de42", "SplmtryData", Status.SUPPLEMENTARY, null, null),
+            tuple("de55", "SplmtryData", Status.SUPPLEMENTARY, null, null));
+    assertThat(report.dropped()).isEmpty();
     assertThat(report.summary())
         .isEqualTo(
             "card-transfer-pacs008 v1 ISO8583_TO_ISO20022: 10 mapped, 5 defaulted, "
-                + "1 generated, 2 inferred, 3 dropped (de41, de42, de55), 2 excluded");
+                + "1 generated, 3 supplementary, 2 inferred, 2 excluded");
   }
 
   @Test
@@ -156,6 +158,7 @@ class CardTransferEndToEndTest {
             .clock(CLOCK)
             .xmlFactory(new DomXmlDocumentAccessFactory())
             .reportValues(true)
+            .validateXsd(true)
             .build();
 
     ConversionResult<String> result = bridge.toIso20022(request());
@@ -170,6 +173,59 @@ class CardTransferEndToEndTest {
     validateAgainstItsSchema(result.value());
   }
 
+  @Test
+  void roundTripsTheRequestExceptForTheNonReversibleFields() throws Exception {
+    IsoBridge bridge = bridge("MSG-1", false);
+
+    ConversionResult<String> forward = bridge.toIso20022(request());
+    ConversionResult<Iso8583Message> back = bridge.toIso8583(forward.value());
+
+    MapIso8583Message expected = new MapIso8583Message("0200");
+    expected.setField(2, PAN);
+    expected.setField(3, "990000");
+    expected.setField(4, "000000012550");
+    expected.setField(7, "1113100000");
+    expected.setField(11, "123456");
+    expected.setField(13, "111326");
+    expected.setField(32, "12345678901");
+    expected.setField(37, "RRN123456789");
+    expected.setField(41, "TERM0001");
+    expected.setField(42, "MERCHANT0000001");
+    expected.setField(43, "MERCHANT NAME  LONDON");
+    expected.setField(49, "840");
+    expected.setField(55, "emv-data");
+    expected.setField(100, "98765432109");
+    expected.setField(103, "1234567890");
+
+    assertThat(back.value()).isEqualTo(expected);
+    assertThat(back.report().direction()).isEqualTo(ConversionDirection.ISO20022_TO_ISO8583);
+    assertThat(back.report().summary())
+        .isEqualTo("card-transfer-pacs008 v1 ISO20022_TO_ISO8583: 12 mapped, 3 supplementary");
+  }
+
+  @Test
+  void sharesTheBridgeBetweenThreadsInBothDirections() throws Exception {
+    IsoBridge bridge = bridge("MSG-1", false);
+    Iso8583Message source = request();
+
+    var forwards =
+        IntStream.range(0, 24).parallel().mapToObj(index -> bridge.toIso20022(source)).toList();
+    String xml = forwards.get(0).value();
+    var backwards =
+        IntStream.range(0, 24).parallel().mapToObj(index -> bridge.toIso8583(xml)).toList();
+
+    assertThat(forwards)
+        .allSatisfy(result -> {
+          assertThat(result.value()).contains("<GrpHdr>");
+          assertThat(result.report().entries()).hasSize(23);
+        });
+    assertThat(backwards)
+        .allSatisfy(result -> {
+          assertThat(result.value().field(4)).contains("000000012550");
+          assertThat(result.report().entries()).hasSize(15);
+        });
+  }
+
   private static IsoBridge bridge(String messageId, boolean reportValues) {
     return IsoBridge.builder()
         .profile(Profile.fromClasspath(PROFILE))
@@ -177,6 +233,7 @@ class CardTransferEndToEndTest {
         .idGenerator(() -> messageId)
         .xmlFactory(new DomXmlDocumentAccessFactory())
         .reportValues(reportValues)
+        .validateXsd(true)
         .build();
   }
 

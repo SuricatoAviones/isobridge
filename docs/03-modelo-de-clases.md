@@ -111,7 +111,7 @@ Rombo relleno: composición. Rombo vacío: agregación. Línea punteada: depende
 | `MapIso8583Message` | Clase mutable de `core` | Implementación en memoria de `Iso8583Message`; la usa la vuelta para entregar su resultado y las pruebas como mensaje de origen |
 | `XmlDocumentAccess` | Interfaz | Lee y escribe valores del XML por ruta; la implementa `isobridge-iso20022` |
 | `XmlDocumentAccessFactory` | Interfaz funcional | Crea el documento XML de cada conversión y, para la vuelta, lo abre y reconoce su tipo de mensaje; la provee la aplicación |
-| `NoProfileException`, `RequiredFieldException` | Excepciones | Nombran el MTI o el campo que falló, nunca un valor |
+| `NoProfileException`, `RequiredFieldException`, `SchemaValidationException` | Excepciones | Nombran el MTI, el campo o el mensaje que falló, nunca un valor |
 | `ConversionResult`, `ConversionReport`, `ReportEntry` | `record` | `ConversionResult<T>` es genérico: lleva un XML (`String`) o un `Iso8583Message` |
 | `Masking` | Clase final con métodos estáticos | Enmascara el PAN y los campos sensibles antes de guardarlos en el informe |
 
@@ -140,6 +140,8 @@ public final class IsoBridge {
         public Builder idGenerator(Supplier<String> idGenerator);
         public Builder xmlFactory(XmlDocumentAccessFactory factory);
         public Builder reportValues(boolean reportValues);
+        public Builder strict(boolean strict);
+        public Builder validateXsd(boolean validateXsd);
         public IsoBridge build();
     }
 }
@@ -235,11 +237,16 @@ public interface Iso8583Message {
 public interface XmlDocumentAccess {
     Optional<String> read(String path);
     void write(String path, String value);
+    default void writeSupplementary(int number, String value);
+    default Map<Integer, String> readSupplementary();
     String toXml();
 }
 
 public interface XmlDocumentAccessFactory {
     XmlDocumentAccess create(String message, String rootPath);
+    default String messageType(String xml);
+    default XmlDocumentAccess parse(String xml, String rootPath);
+    default void validate(String message, String xml);
 }
 
 public record Profile(
@@ -291,6 +298,8 @@ public final class DomXmlDocumentAccess implements XmlDocumentAccess {
     public static DomXmlDocumentAccess parse(String xml, String rootPath);
     public Optional<String> read(String path);
     public void write(String path, String value);
+    public void writeSupplementary(int number, String value);
+    public Map<Integer, String> readSupplementary();
     public String toXml();
 }
 
@@ -298,6 +307,7 @@ public final class DomXmlDocumentAccessFactory implements XmlDocumentAccessFacto
     public XmlDocumentAccess create(String message, String rootPath);
     public String messageType(String xml);
     public XmlDocumentAccess parse(String xml, String rootPath);
+    public void validate(String message, String xml);
 }
 ```
 

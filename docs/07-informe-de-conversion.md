@@ -41,7 +41,8 @@ Serializado a JSON:
 - Si falta un campo marcado `required`, la conversión lanza `RequiredFieldException` con su referencia y el identificador del mapeo, sin ningún valor.
 - Un campo `EXCLUDED` no cuenta como pérdida: es una decisión del perfil.
 - Los valores no se incluyen por defecto. Con `reportValues(true)` se incluyen, y los marcados como sensibles salen enmascarados.
-- En modo estricto, un `DROPPED` sobre un campo `required` lanza una excepción en lugar de devolver el informe.
+- En modo estricto, cualquier entrada `DROPPED` lanza una `ConversionException` con el resumen del informe en lugar de devolverlo. Las entradas `SUPPLEMENTARY` no cuentan como pérdida.
+- Los campos sin elemento propio viajan en `SplmtryData` cuando el perfil usa `unmapped: supplementary`; el informe los marca `SUPPLEMENTARY` y la vuelta los recupera. El número de tarjeta se enmascara también en este caso.
 - El informe es un objeto inmutable con métodos de consulta: `hasLosses()`, `dropped()`, `summary()`.
 - El informe lleva el identificador y la versión del perfil, y el sentido de la conversión.
 - Una entrada `EXCLUDED` no lleva valor nunca: el constructor del informe lo rechaza.

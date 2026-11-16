@@ -79,7 +79,7 @@ unmapped: report   # report | fail | supplementary
 | `constants` | Valores fijos que el destino exige y el origen no trae |
 | `generated` | Valores producidos al convertir: `message-id` (generador inyectado) y `now` (instante del reloj inyectado) |
 | `never` | Campos que jamás se copian |
-| `unmapped` | Qué hacer con lo no mapeado: `report` lo apunta como `DROPPED`, `fail` lanza `ConversionException`; `supplementary` se rechaza al construir el puente hasta la fase 2 |
+| `unmapped` | Qué hacer con lo no mapeado: `report` lo apunta como `DROPPED`, `fail` lanza `ConversionException` y `supplementary` lo guarda como datos suplementarios para que la vuelta lo recupere |
 
 ## Sintaxis de `from`
 
@@ -133,7 +133,7 @@ Detalles:
 - **`args` y referencias.** Una cadena de `args` con la forma de una referencia de `from` (`de49`, `de3[0:2]`, `mti`) se lee del mensaje de origen y se pasa al conversor con su valor; si el campo no está, el argumento no se pasa. En la vuelta se lee del mensaje ISO 8583 que se está construyendo: si el campo aún no se ha escrito, el motor convierte antes el mapeo que lo produce, así que el orden de los mapeos en el YAML no importa; un ciclo entre argumentos detiene la conversión. Las demás cadenas son literales, y los números y booleanos se pasan tal cual. Una cadena que empiece por `de` y no sea una referencia válida se trata como literal, no como error.
 - **`generated`.** `message-id` llama al generador inyectado, que por defecto devuelve un UUID aleatorio; un valor nulo o en blanco detiene la conversión. `now` escribe `Clock.instant().toString()` del reloj inyectado, en ISO 8601 con `Z`.
 - **`never`.** El motor no lee esos campos del mensaje. Si vienen, el informe los marca `EXCLUDED` y sin valor; si no vienen, no hay entrada. Un campo no puede estar a la vez en `fields` y en `never`.
-- **`unmapped`.** `report` añade una entrada `DROPPED` por cada campo presente sin mapeo, en orden de número. `fail` lanza `ConversionException` con el primero de ellos. `supplementary` se rechaza al construir el puente hasta que la fase 2 fije el formato de los datos suplementarios.
+- **`unmapped`.** `report` añade una entrada `DROPPED` por cada campo presente sin mapeo, en orden de número. `fail` lanza `ConversionException` con el primero de ellos. `supplementary` guarda cada campo en un bloque `SplmtryData/Envlp` con un hijo en el namespace `urn:isobridge:supplementary`, lo marca como `SUPPLEMENTARY` y la vuelta lo recupera; un campo ya mapeado tiene prioridad sobre el valor suplementario.
 
 ## Validación al cargar
 

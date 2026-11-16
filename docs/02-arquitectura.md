@@ -79,7 +79,7 @@ Los esquemas se guardan sin modificar en `isobridge-iso20022/src/main/resources/
 | `pacs.008.001.08.xsd` | `FIToFICstmrCdtTrf` | <https://www.iso20022.org/sites/default/files/documents/messages/pacs/schemas/pacs.008.001.08.xsd> | `cf048155f70cacd03f1f1dfadf66cba8752be93c249c267351782fd6adb023f7` |
 | `pacs.002.001.12.xsd` | `FIToFIPmtStsRpt` | <https://www.iso20022.org/sites/default/files/documents/messages/pacs/schemas/pacs.002.001.12.xsd> | `c6ec04854583d87506ca9baa02c27a50001c3518ad46ca6892da1d515e074a0a` |
 
-Ambos se descargaron el 13 de noviembre de 2026 y son autocontenidos: no importan ni incluyen otros esquemas. Del XSD solo se leen la estructura de elementos y sus tipos; las restricciones, los atributos y los tipos simples se usarán para validar en la fase 2.
+Ambos se descargaron el 13 de noviembre de 2026 y son autocontenidos: no importan ni incluyen otros esquemas. Del XSD se leen la estructura de elementos y sus tipos para escribir; el propio esquema valida el XML cuando `validateXsd(true)` está activo, en los dos sentidos.
 
 ## Estructura del repositorio
 

@@ -25,7 +25,7 @@ No existe un mapeo oficial único entre los dos estándares, porque ISO 8583 var
 | RF-04 | Conversores incluidos: monto, moneda numérica a alfabética, fechas, relleno y recorte | 1 |
 | RF-05 | Conversores propios registrables por el usuario | 2 |
 | RF-06 | Informe de conversión: campos mapeados, descartados, con valor por defecto y errores | 1 |
-| RF-07 | Modo estricto: falla si se pierde un campo marcado como obligatorio | 2 |
+| RF-07 | Modo estricto: falla si el informe contiene pérdidas (`DROPPED`) | 2 |
 | RF-08 | Validar el XML resultante contra el XSD del mensaje | 2 |
 | RF-09 | Enmascarar datos sensibles (PAN) en informes y registros | 1 |
 | RF-10 | Starter de Spring Boot con autoconfiguración y propiedades | 3 |

@@ -56,16 +56,16 @@ Objetivo: el mismo perfil funciona en los dos sentidos.
 
 - [x] Lectura del XML por rutas en `isobridge-iso20022`. Implementada en la fase 1 junto con la escritura; la fase 2 añade las pruebas de los caminos de error y del namespace.
 - [x] Motor en sentido de vuelta e `IsoBridge.toIso8583`: perfil por tipo de mensaje del namespace, resolución de `args` en cualquier orden, informe invertido y `MapIso8583Message` como resultado.
-- [ ] Datos suplementarios: escritura en la ida y recuperación en la vuelta.
-- [ ] Conversores propios registrables desde el `Builder` (RF-05).
-- [ ] Modo estricto (RF-07).
-- [ ] Validación XSD del XML generado y del recibido (RF-08).
-- [ ] Perfil `card-transfer-response-pacs002.yaml` con el `lookup` de DE 39.
+- [x] Datos suplementarios: escritura en la ida y recuperación en la vuelta. Cada campo sin destino viaja en un `SplmtryData/Envlp` con un hijo en el namespace `urn:isobridge:supplementary`.
+- [x] Conversores propios registrables desde el `Builder` (RF-05). Ya estaban disponibles y probados desde la fase 1.
+- [x] Modo estricto (RF-07): cualquier entrada `DROPPED` lanza `ConversionException` con el resumen.
+- [x] Validación XSD del XML generado y del recibido (RF-08), con `validateXsd(true)` y el XSD incluido.
+- [x] Perfil `card-transfer-response-pacs002.yaml` con el `lookup` de DE 39; DE 39 queda declarado como no reversible.
 - [ ] Módulo `isobridge-j8583` con `J8583Adapter`, una vez confirmada su licencia.
-- [ ] Prueba de ida y vuelta para los dos perfiles.
-- [ ] Prueba de concurrencia: un `IsoBridge` compartido entre hilos.
+- [x] Prueba de ida y vuelta para los dos perfiles, con las diferencias declaradas (DE 12, DE 35, DE 52 y DE 39).
+- [x] Prueba de concurrencia: un `IsoBridge` compartido entre hilos, en los dos sentidos.
 
-Cierre: la prueba de ida y vuelta pasa para los dos perfiles y solo difieren los campos declarados como no reversibles.
+Cierre: la prueba de ida y vuelta pasa para los dos perfiles y solo difieren los campos declarados como no reversibles. Cumplido el 16 de noviembre de 2026; el módulo de j8583 sigue pendiente de la licencia.
 
 ## Fase 3 — Spring Boot
 

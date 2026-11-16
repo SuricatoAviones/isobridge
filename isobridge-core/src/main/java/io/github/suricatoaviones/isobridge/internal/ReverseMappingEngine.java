@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.TreeMap;
 
 /**
  * Converts an ISO 20022 XML document back into ISO 8583, one profile at a time.
@@ -44,6 +45,7 @@ public final class ReverseMappingEngine {
   private final ConverterRegistry converters;
   private final Clock clock;
   private final boolean reportValues;
+  private final boolean strict;
 
   /**
    * Creates the engine.
@@ -51,11 +53,14 @@ public final class ReverseMappingEngine {
    * @param converters the converters used by the profile
    * @param clock the clock passed to the converters
    * @param reportValues whether the report entries carry their masked values
+   * @param strict whether a conversion with losses must fail
    */
-  public ReverseMappingEngine(ConverterRegistry converters, Clock clock, boolean reportValues) {
+  public ReverseMappingEngine(
+      ConverterRegistry converters, Clock clock, boolean reportValues, boolean strict) {
     this.converters = Objects.requireNonNull(converters, "converters");
     this.clock = Objects.requireNonNull(clock, "clock");
     this.reportValues = reportValues;
+    this.strict = strict;
   }
 
   /**
@@ -86,9 +91,29 @@ public final class ReverseMappingEngine {
         ordered.add(entry);
       }
     }
+    if (profile.unmapped() == Profile.Unmapped.SUPPLEMENTARY) {
+      Map<Integer, String> supplementary = new TreeMap<>(xml.readSupplementary());
+      for (Map.Entry<Integer, String> entry : supplementary.entrySet()) {
+        if (message.field(entry.getKey()).isEmpty()) {
+          message.setField(entry.getKey(), entry.getValue());
+          ordered.add(
+              new ReportEntry(
+                  null,
+                  "SplmtryData",
+                  "de" + entry.getKey(),
+                  Status.SUPPLEMENTARY,
+                  null,
+                  reportValues ? Masking.maskSupplementary(entry.getKey(), entry.getValue()) : null,
+                  null));
+        }
+      }
+    }
     ConversionReport report =
         ConversionReport.of(
             profile.id(), profile.version(), ConversionDirection.ISO20022_TO_ISO8583, ordered);
+    if (strict && report.hasLosses()) {
+      throw new ConversionException("The conversion lost fields: " + report.summary());
+    }
     return new ConversionResult<>(message, report);
   }
 
