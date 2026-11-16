@@ -1,0 +1,10 @@
+profile: invalid
+version: 1
+source:
+  standard: iso8583
+target:
+  standard: iso20022
+  message: pacs.008.001.08
+  root: /Document/FIToFICstmrCdtTrf
+
+fields: []

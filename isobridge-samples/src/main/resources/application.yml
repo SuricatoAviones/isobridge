@@ -1,0 +1,7 @@
+isobridge:
+  profiles:
+    - classpath:profiles/card-transfer-pacs008.yaml
+    - classpath:profiles/card-transfer-response-pacs002.yaml
+  strict: false
+  validate-xsd: true
+  report-values: false

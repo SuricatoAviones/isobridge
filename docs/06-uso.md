@@ -41,7 +41,7 @@ isobridge:
     - classpath:profiles/card-transfer-response-pacs002.yaml
   strict: false
   validate-xsd: true
-  mask-sensitive: true
+  report-values: false
 ```
 
 ```java
@@ -75,24 +75,28 @@ FieldConverter binToMemberId() {
 
 | Propiedad | Por defecto | Significado |
 | --- | --- | --- |
-| `isobridge.profiles` | Lista vacía | Ubicaciones de los perfiles a cargar |
+| `isobridge.profiles` | Lista vacía | Ubicaciones de los perfiles a cargar; sin ninguna, el arranque falla con un mensaje claro |
 | `isobridge.strict` | `false` | Falla si el informe contiene pérdidas (`DROPPED`) |
 | `isobridge.validate-xsd` | `true` | Valida el XML generado y el recibido contra su XSD |
-| `isobridge.mask-sensitive` | `true` | Enmascara los valores sensibles en el informe |
-| `isobridge.report-values` | `false` | Incluye los valores en el informe |
+| `isobridge.report-values` | `false` | Incluye los valores en el informe, siempre enmascarados |
 | `isobridge.enabled` | `true` | Activa o desactiva la autoconfiguración |
+
+El enmascarado no es configurable: el núcleo lo aplica siempre, también a los valores suplementarios, porque el número de tarjeta completo no puede aparecer en el informe.
 
 ## Qué añade el starter
 
 | Elemento | Detalle |
 | --- | --- |
-| Autoconfiguración | Crea el bean `IsoBridge` con los perfiles declarados; se desactiva si la aplicación define el suyo |
-| Validación al arrancar | Un perfil inválido detiene el arranque con el error y su línea |
-| Conversores | Registra todo bean `FieldConverter` del contexto |
-| Métricas | Contadores de Micrometer por perfil y resultado, y campos perdidos por conversión |
-| Salud | Indicador de Actuator con los perfiles cargados y su versión |
+| Autoconfiguración | Crea el bean `IsoBridge` con los perfiles declarados; se desactiva si la aplicación define el suyo o con `isobridge.enabled=false` |
+| Validación al arrancar | Un perfil inválido detiene el arranque con el nombre del perfil y su línea |
+| Conversores | Registra todo bean `FieldConverter` del contexto y lo usa también al validar los perfiles |
+| Métricas | Contador `isobridge.conversions` con las etiquetas `profile`, `direction` y `lossless`; contador `isobridge.dropped.fields` con `profile` y `field` |
+| Salud | Indicador de Actuator con el número de perfiles y la lista `id vversión` |
+| Metadatos | El procesador de configuración genera el autocompletado de `isobridge.*` para el IDE |
 
-Métricas y salud solo se activan si Micrometer y Actuator están en el classpath.
+Métricas y salud solo se activan si Micrometer y Actuator están en el classpath. El starter no obliga a tenerlos.
+
+El módulo `isobridge-samples` es una aplicación de ejemplo: `POST /api/convert` recibe `{"mti":"0200","fields":{"4":"000000012550",...}}` y devuelve el XML con su informe.
 
 ## Excepciones
 

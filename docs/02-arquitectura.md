@@ -37,8 +37,8 @@ Cada flecha apunta al módulo del que se depende.
 | `isobridge-iso20022` | Leer y escribir el XML por rutas, en el orden del XSD, y validarlo | `core` |
 | `isobridge-j8583` | Envolver un mensaje de j8583 en la interfaz `Iso8583Message` | `core`, j8583 |
 | `isobridge-profiles` | Perfiles YAML incluidos, con sus pruebas de ida y vuelta | `core` |
-| `isobridge-spring-boot-starter` | Autoconfiguración, propiedades, métricas e indicador de salud | Todos los anteriores, Spring Boot |
-| `isobridge-samples` | Aplicación de ejemplo con un endpoint REST; no se publica | El starter |
+| `isobridge-spring-boot-starter` | Autoconfiguración, propiedades, métricas e indicador de salud | `core`, `iso20022`, Spring Boot |
+| `isobridge-samples` | Aplicación de ejemplo con un endpoint REST; no se publica | El starter, `profiles` |
 
 ## Reglas de dependencia
 

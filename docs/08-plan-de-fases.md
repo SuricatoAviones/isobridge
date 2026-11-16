@@ -71,15 +71,15 @@ Cierre: la prueba de ida y vuelta pasa para los dos perfiles y solo difieren los
 
 Objetivo: usar la librería con solo añadir una dependencia.
 
-- [ ] Módulo `isobridge-spring-boot-starter` con autoconfiguración y propiedades `isobridge.*`.
-- [ ] Registro automático de los beans `FieldConverter`.
-- [ ] Fallo de arranque claro ante un perfil inválido.
-- [ ] Métricas de Micrometer e indicador de salud de Actuator, condicionados a su presencia.
-- [ ] Metadatos de configuración para el autocompletado de propiedades en el IDE.
-- [ ] Pruebas de la autoconfiguración con `ApplicationContextRunner`.
-- [ ] Módulo `isobridge-samples`: aplicación con un endpoint REST que recibe un mensaje y devuelve el XML y el informe.
+- [x] Módulo `isobridge-spring-boot-starter` con autoconfiguración y propiedades `isobridge.*`.
+- [x] Registro automático de los beans `FieldConverter`, usados también al validar los perfiles.
+- [x] Fallo de arranque claro ante un perfil inválido o una lista de perfiles vacía.
+- [x] Métricas de Micrometer e indicador de salud de Actuator, condicionados a su presencia.
+- [x] Metadatos de configuración para el autocompletado de propiedades en el IDE.
+- [x] Pruebas de la autoconfiguración con `ApplicationContextRunner`.
+- [x] Módulo `isobridge-samples`: aplicación con un endpoint REST que recibe un mensaje y devuelve el XML y el informe.
 
-Cierre: la aplicación de ejemplo arranca y convierte sin más configuración que las propiedades.
+Cierre: la aplicación de ejemplo arranca y convierte sin más configuración que las propiedades. Cumplido el 16 de noviembre de 2026; el endpoint `POST /api/convert` se prueba con `@SpringBootTest` y `MockMvc`.
 
 ## Fase 4 — Publicación
 

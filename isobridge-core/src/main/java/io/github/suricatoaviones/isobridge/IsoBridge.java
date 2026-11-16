@@ -10,8 +10,10 @@ import io.github.suricatoaviones.isobridge.message.XmlDocumentAccessFactory;
 import io.github.suricatoaviones.isobridge.profile.FieldMapping;
 import io.github.suricatoaviones.isobridge.profile.FieldReference;
 import io.github.suricatoaviones.isobridge.profile.Profile;
+import io.github.suricatoaviones.isobridge.report.ConversionReport;
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -41,6 +43,7 @@ public final class IsoBridge {
   private final ReverseMappingEngine reverseEngine;
   private final XmlDocumentAccessFactory xmlFactory;
   private final boolean validateXsd;
+  private final List<ConversionListener> listeners;
 
   private IsoBridge(
       Map<String, Profile> profilesByMti,
@@ -48,13 +51,15 @@ public final class IsoBridge {
       ForwardMappingEngine forwardEngine,
       ReverseMappingEngine reverseEngine,
       XmlDocumentAccessFactory xmlFactory,
-      boolean validateXsd) {
+      boolean validateXsd,
+      List<ConversionListener> listeners) {
     this.profilesByMti = profilesByMti;
     this.profilesByMessage = profilesByMessage;
     this.forwardEngine = forwardEngine;
     this.reverseEngine = reverseEngine;
     this.xmlFactory = xmlFactory;
     this.validateXsd = validateXsd;
+    this.listeners = List.copyOf(listeners);
   }
 
   /** Creates a builder with the built-in converters, the UTC clock and random identifiers. */
@@ -81,6 +86,7 @@ public final class IsoBridge {
     if (validateXsd) {
       xmlFactory.validate(profile.target().message().orElseThrow(), result.value());
     }
+    notifyListeners(profile, ConversionDirection.ISO8583_TO_ISO20022, result.report());
     return result;
   }
 
@@ -106,7 +112,25 @@ public final class IsoBridge {
       xmlFactory.validate(messageType, xml);
     }
     XmlDocumentAccess document = xmlFactory.parse(xml, profile.target().root().orElseThrow());
-    return reverseEngine.convert(profile, document);
+    ConversionResult<Iso8583Message> result = reverseEngine.convert(profile, document);
+    notifyListeners(profile, ConversionDirection.ISO20022_TO_ISO8583, result.report());
+    return result;
+  }
+
+  /**
+   * Returns the profiles loaded in the bridge, sorted by identifier.
+   *
+   * @return an immutable list of profiles
+   */
+  public List<Profile> profiles() {
+    return profilesByMti.values().stream().sorted(Comparator.comparing(Profile::id)).toList();
+  }
+
+  private void notifyListeners(
+      Profile profile, ConversionDirection direction, ConversionReport report) {
+    for (ConversionListener listener : listeners) {
+      listener.onConversion(profile, direction, report);
+    }
   }
 
   /** Builds an {@link IsoBridge}. */
@@ -121,6 +145,7 @@ public final class IsoBridge {
     private boolean reportValues;
     private boolean strict;
     private boolean validateXsd;
+    private final List<ConversionListener> listeners = new ArrayList<>();
 
     private Builder() {}
 
@@ -222,6 +247,17 @@ public final class IsoBridge {
     }
 
     /**
+     * Adds a listener called after every conversion, for metrics or logging.
+     *
+     * @param listener the listener
+     * @return this builder
+     */
+    public Builder listener(ConversionListener listener) {
+      listeners.add(Objects.requireNonNull(listener, "listener"));
+      return this;
+    }
+
+    /**
      * Validates the configuration and creates the bridge.
      *
      * @return the bridge
@@ -265,7 +301,13 @@ public final class IsoBridge {
       ReverseMappingEngine reverseEngine =
           new ReverseMappingEngine(converters, clock, reportValues, strict);
       return new IsoBridge(
-          Map.copyOf(byMti), Map.copyOf(byMessage), engine, reverseEngine, xmlFactory, validateXsd);
+          Map.copyOf(byMti),
+          Map.copyOf(byMessage),
+          engine,
+          reverseEngine,
+          xmlFactory,
+          validateXsd,
+          listeners);
     }
 
     private void validate(Profile profile) {

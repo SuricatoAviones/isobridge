@@ -339,6 +339,36 @@ class IsoBridgeTest {
   }
 
   @Test
+  void notifiesListenersAfterEachConversionAndExposesTheProfiles() {
+    RecordingXmlDocumentAccess xml = new RecordingXmlDocumentAccess();
+    xml.write("CdtTrfTxInf/IntrBkSttlmAmt", "100");
+    Profile profile =
+        profile(
+            "notified",
+            "0200",
+            Profile.Unmapped.REPORT,
+            List.of(mapping("amount", "de4", "CdtTrfTxInf/IntrBkSttlmAmt")));
+    List<String> events = new ArrayList<>();
+    IsoBridge bridge =
+        IsoBridge.builder()
+            .profile(profile)
+            .clock(CLOCK)
+            .xmlFactory(new FakeXmlFactory(PACS_008, xml))
+            .listener((converted, direction, report) ->
+                events.add(converted.id() + ":" + direction + ":" + report.entries().size()))
+            .build();
+    MapIso8583Message message = new MapIso8583Message("0200");
+    message.setField(4, "100");
+
+    bridge.toIso20022(message);
+    bridge.toIso8583("<xml/>");
+
+    assertThat(events)
+        .containsExactly("notified:ISO8583_TO_ISO20022:1", "notified:ISO20022_TO_ISO8583:1");
+    assertThat(bridge.profiles()).extracting(Profile::id).containsExactly("notified");
+  }
+
+  @Test
   void selectsTheProfileByMtiAndRejectsAnUnknownOne() {
     RecordingXmlDocumentAccess xml = new RecordingXmlDocumentAccess();
     Profile request =

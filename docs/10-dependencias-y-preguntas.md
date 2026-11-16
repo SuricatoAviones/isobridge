@@ -70,3 +70,6 @@ Cada una bloquea la fase indicada. Se cierra editando el documento afectado.
 - DE 39 se resuelve con dos `lookup` de solo ida, uno para `TxSts` y otro para `StsRsnInf/Rsn/Cd`. La vuelta no recupera DE 39 y el campo se declara no reversible; los códigos de motivo siguen sin contrastar con la lista oficial.
 - El modo estricto falla ante cualquier entrada `DROPPED`, no solo ante campos `required`. Las entradas `SUPPLEMENTARY` no cuentan como pérdida.
 - La validación XSD es opcional con `validateXsd(true)`; el starter la activa por defecto. La factoría XML recibe `validate(message, xml)` y `DomXmlDocumentAccessFactory` usa los XSD incluidos.
+- El starter carga los perfiles con un `ProfileReader` construido sobre el registro que ya incluye los beans `FieldConverter`; si usara `Profile.fromClasspath`, un perfil con un conversor propio se rechazaría antes de registrar el bean.
+- Las métricas y la salud se activan con clases anidadas condicionadas por `@ConditionalOnClass`; sin Micrometer o Actuator el starter funciona igual. La salud publica `count` y la lista `id vversión`.
+- El enmascarado no se puede desactivar: el núcleo lo aplica siempre. Se retiró la propiedad `isobridge.mask-sensitive` que figuraba en el borrador, para no prometer un interruptor que rompería la regla del PAN.

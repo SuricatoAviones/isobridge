@@ -20,8 +20,9 @@ Version 0.1.0 covers phases 0 to 2 of the roadmap:
 - Reports what was mapped, defaulted, generated, inferred, carried as supplementary data, dropped or excluded.
 - Validates the XML against the bundled XSDs and supports a strict mode and custom converters.
 - Includes an optional adapter for j8583 2.0.0.
+- Provides a Spring Boot starter with auto-configuration, Micrometer metrics and an Actuator health indicator, plus a sample REST application.
 
-The Spring Boot starter (phase 3) and subfields such as `de48.01` are not implemented yet.
+Subfields such as `de48.01` are not implemented yet.
 
 The design lives in [`docs/`](docs) (in Spanish) and the roadmap in
 [`docs/08-plan-de-fases.md`](docs/08-plan-de-fases.md).

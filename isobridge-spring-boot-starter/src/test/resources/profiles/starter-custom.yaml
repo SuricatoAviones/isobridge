@@ -1,0 +1,19 @@
+profile: starter-custom
+version: 1
+description: Profile used by the starter tests
+
+source:
+  standard: iso8583
+  mti: "0200"
+target:
+  standard: iso20022
+  message: pacs.008.001.08
+  root: /Document/FIToFICstmrCdtTrf
+
+fields:
+  - id: amount
+    from: de4
+    to: CdtTrfTxInf/IntrBkSttlmAmt
+    convert: upper-case
+
+unmapped: report

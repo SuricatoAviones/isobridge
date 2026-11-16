@@ -106,6 +106,7 @@ Rombo relleno: composición. Rombo vacío: agregación. Línea punteada: depende
 | `ProfileException` | Excepción final | Lleva todos los errores de la carga, cada uno con su línea y su motivo |
 | `FieldConverter` | Interfaz | Punto de extensión; los incluidos se registran por nombre |
 | `ConversionContext` | Interfaz | La implementa el motor: reloj, otros campos del mensaje y `args` |
+| `ConversionListener` | Interfaz funcional | Recibe cada conversión terminada; el starter la usa para las métricas |
 | `ConverterRegistry` | Clase final inmutable | Conversores indexados por nombre; `withBuiltIns()` trae los incluidos |
 | `Iso8583Message` | Interfaz | La implementa un adaptador por cada parser |
 | `MapIso8583Message` | Clase mutable de `core` | Implementación en memoria de `Iso8583Message`; la usa la vuelta para entregar su resultado y las pruebas como mensaje de origen |
@@ -132,6 +133,7 @@ public final class IsoBridge {
     public static Builder builder();
     public ConversionResult<String> toIso20022(Iso8583Message message);
     public ConversionResult<Iso8583Message> toIso8583(String xml);
+    public List<Profile> profiles();
 
     public static final class Builder {
         public Builder profile(Profile profile);
@@ -142,8 +144,14 @@ public final class IsoBridge {
         public Builder reportValues(boolean reportValues);
         public Builder strict(boolean strict);
         public Builder validateXsd(boolean validateXsd);
+        public Builder listener(ConversionListener listener);
         public IsoBridge build();
     }
+}
+
+@FunctionalInterface
+public interface ConversionListener {
+    void onConversion(Profile profile, ConversionDirection direction, ConversionReport report);
 }
 
 public interface FieldConverter {
@@ -321,6 +329,30 @@ public final class DomXmlDocumentAccessFactory implements XmlDocumentAccessFacto
 
 `ReverseMappingEngine` (paquete `internal`) aplica el mismo perfil en la vuelta: recorre los mapeos con `direction` `both` o `reverse`, lee su ruta del XML, aplica la operación inversa del conversor y escribe el elemento ISO 8583. Si un `args` referencia un campo que aún no se ha escrito, convierte antes el mapeo de ese campo, de modo que el orden del YAML no importa. `constants`, `generated` y `never` son propios de la ida y no se procesan.
 
-`IsoBridge.Builder.build()` valida lo que depende del motor: dos perfiles con el mismo MTI o el mismo mensaje de destino, conversores desconocidos, perfiles con `unmapped: supplementary` y referencias a subcampos. Las dos últimas se rechazan mientras la fase 2 no las soporte, y el mensaje de error lo explica.
+`IsoBridge.Builder.build()` valida lo que depende del motor: dos perfiles con el mismo MTI o el mismo mensaje de destino, conversores desconocidos y referencias a subcampos. Los subcampos se rechazan mientras `Iso8583Message` no los exponga, y el mensaje de error lo explica.
 
 Un conversor cuyo `infers()` devuelve `true` produce una entrada `INFERRED` en lugar de `MAPPED`, porque parte del valor no viene del origen. Lo hacen `mmddhhmmss-utc` y `local-date-time`.
+
+## Módulo `isobridge-spring-boot-starter`
+
+```java
+@ConfigurationProperties("isobridge")
+public class IsoBridgeProperties {
+    private List<String> profiles;
+    private boolean strict;
+    private boolean validateXsd = true;
+    private boolean reportValues;
+    private boolean enabled = true;
+}
+
+@AutoConfiguration
+public class IsoBridgeAutoConfiguration {
+    @Bean
+    @ConditionalOnMissingBean
+    public IsoBridge isoBridge(...);
+}
+```
+
+`IsoBridgeProperties` enlaza `isobridge.*`. `IsoBridgeAutoConfiguration` crea el bean `IsoBridge` con `DomXmlDocumentAccessFactory`, los perfiles declarados y todos los beans `FieldConverter`; los perfiles se cargan con un `ProfileReader` que conoce esos conversores. Si la aplicación define su propio `IsoBridge`, o `isobridge.enabled=false`, la autoconfiguración se retira. Un perfil inválido o una lista de perfiles vacía detienen el arranque con un mensaje claro.
+
+`MicrometerConversionListener` registra `isobridge.conversions` (etiquetas `profile`, `direction`, `lossless`) y `isobridge.dropped.fields` (`profile`, `field`) si hay un `MeterRegistry`. `IsoBridgeHealthIndicator` publica `count` y la lista de perfiles como `id vversión` si Actuator está presente. Ambos se activan solo cuando su librería está en el classpath.
