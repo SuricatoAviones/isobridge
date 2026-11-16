@@ -91,9 +91,9 @@ Objetivo: que cualquiera pueda usarla.
 - [ ] Medición con JMH y resultado en el README.
 - [x] Umbral de cobertura en el CI: JaCoCo exige 90% de líneas en `isobridge-core`.
 - [ ] Configuración de publicación en Maven Central: firma, fuentes y Javadoc. Requiere el namespace verificado y las credenciales de Sonatype, que no están en el repositorio.
-- [x] `CHANGELOG.md` y versión 0.1.0.
+- [x] `CHANGELOG.md` y versión 0.2.0.
 
-Cierre: la versión 0.1.0 se instala desde Maven Central con las coordenadas del README. La 0.1.0 está publicada en GitHub Releases; la publicación en Maven Central sigue pendiente de las credenciales y del namespace.
+Cierre: la versión 0.2.0 se instala desde Maven Central con las coordenadas del README. La 0.2.0 está publicada en GitHub Releases; la publicación en Maven Central sigue pendiente de las credenciales y del namespace.
 
 ## Qué no entra en ninguna fase
 

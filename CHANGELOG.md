@@ -4,9 +4,23 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.2.0] - 2026-11-16
+
+Adds the Spring Boot integration and the release polish.
+
+### Added
+
+- `isobridge-spring-boot-starter`: auto-configuration of `IsoBridge`, `isobridge.*` properties, automatic `FieldConverter` registration, Micrometer counters, Actuator health indicator and configuration metadata.
+- `isobridge-samples`: Spring Boot application with `POST /api/convert`.
+- `ConversionListener` in the core, called after every conversion; the starter uses it for metrics.
+- `IsoBridge.profiles()` to inspect the loaded profiles.
+- Profile guide in `docs/11-guia-de-perfiles.md`.
+- `CHANGELOG.md`.
+- JaCoCo line-coverage check of 90% for `isobridge-core`.
+
 ## [0.1.0] - 2026-11-16
 
-First release. Covers phases 0 to 3 of the roadmap.
+First release. Covers phases 0 to 2 of the roadmap.
 
 ### Added
 
@@ -16,10 +30,6 @@ First release. Covers phases 0 to 3 of the roadmap.
 - `isobridge-profiles`: `card-transfer-pacs008` (0200 to pacs.008.001.08) and `card-transfer-response-pacs002` (0210 to pacs.002.001.12), both verified against their XSD.
 - Supplementary data for fields without an ISO 20022 element, recovered by the reverse conversion.
 - `isobridge-j8583`: optional adapter for j8583 2.0.0.
-- `isobridge-spring-boot-starter`: auto-configuration of `IsoBridge`, `isobridge.*` properties, automatic `FieldConverter` registration, Micrometer counters, Actuator health indicator and configuration metadata.
-- `isobridge-samples`: Spring Boot application with `POST /api/convert`.
-- Profile guide in `docs/11-guia-de-perfiles.md`.
-- JaCoCo line-coverage check of 90% for `isobridge-core`.
 
 ### Known limitations
 
