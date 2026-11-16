@@ -85,15 +85,15 @@ Cierre: la aplicación de ejemplo arranca y convierte sin más configuración qu
 
 Objetivo: que cualquiera pueda usarla.
 
-- [ ] `README.md` con guía rápida, tabla de módulos y ejemplo completo.
-- [ ] Guía "Cómo escribir un perfil" en `docs/`.
-- [ ] Javadoc en toda la API pública.
+- [x] `README.md` con guía rápida, tabla de módulos y ejemplo completo.
+- [x] Guía "Cómo escribir un perfil" en `docs/11-guia-de-perfiles.md`.
+- [x] Javadoc en toda la API pública; `mvn javadoc:javadoc` termina en `BUILD SUCCESS`.
 - [ ] Medición con JMH y resultado en el README.
-- [ ] Umbral de cobertura en el CI.
-- [ ] Configuración de publicación en Maven Central: firma, fuentes y Javadoc.
-- [ ] `CHANGELOG.md` y versión 0.1.0.
+- [x] Umbral de cobertura en el CI: JaCoCo exige 90% de líneas en `isobridge-core`.
+- [ ] Configuración de publicación en Maven Central: firma, fuentes y Javadoc. Requiere el namespace verificado y las credenciales de Sonatype, que no están en el repositorio.
+- [x] `CHANGELOG.md` y versión 0.1.0.
 
-Cierre: la versión 0.1.0 se instala desde Maven Central con las coordenadas del README.
+Cierre: la versión 0.1.0 se instala desde Maven Central con las coordenadas del README. La 0.1.0 está publicada en GitHub Releases; la publicación en Maven Central sigue pendiente de las credenciales y del namespace.
 
 ## Qué no entra en ninguna fase
 

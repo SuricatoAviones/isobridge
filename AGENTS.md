@@ -18,6 +18,7 @@ Antes de cualquier tarea, lee el documento que la cubre:
 | API pública, starter de Spring Boot, excepciones | `docs/06-uso.md` |
 | Informe de conversión | `docs/07-informe-de-conversion.md` |
 | Dependencias nuevas, licencias | `docs/10-dependencias-y-preguntas.md` |
+| Escribir o verificar un perfil | `docs/04-formato-del-perfil.md`, `docs/11-guia-de-perfiles.md` |
 
 ## Datos del proyecto
 
