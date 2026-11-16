@@ -48,7 +48,7 @@ Cada una bloquea la fase indicada. Se cierra editando el documento afectado.
 
 | Pregunta | Bloquea | Documento afectado |
 | --- | --- | --- |
-| ¿Cuándo se amplía `Iso8583Message` para exponer subcampos, como `de48.01`? Hasta entonces el puente rechaza esos perfiles | Fase 2 | `03-modelo-de-clases.md` |
+| ¿Cuándo se amplía `Iso8583Message` para exponer subcampos, como `de48.01`? Hasta entonces el puente rechaza esos perfiles | Después de la fase 2 | `03-modelo-de-clases.md` |
 | ¿Permiten los términos de ISO 20022 redistribuir sus XSD dentro del JAR publicado? Se incluyen en el repositorio; falta confirmarlo antes de publicar | Fase 4 | Este |
 | ¿Se añade un segundo perfil con los mensajes de tarjetas de ISO 20022 (familia `cain`), que corresponden mejor a una autorización que pacs.008? | Después de la fase 2 | `05-perfil-incluido.md` |
 | ¿Nombre definitivo y coordenadas Maven? Comprobar que estén libres en Maven Central | Fase 4 | `AGENTS.md` |
