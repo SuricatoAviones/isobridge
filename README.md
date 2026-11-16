@@ -13,10 +13,15 @@ example profile, not a fixed conversion table.
 
 ## Status
 
-Early development. Only the scaffolding is in place: a multi-module Maven
-build, automatic code format checks, coverage reporting and CI. The first
-usable conversion, an ISO 8583 `0200` to a schema-valid `pacs.008`, is the
-goal of phase 1.
+Version 0.1.0 covers phases 0 to 2 of the roadmap:
+
+- Converts an ISO 8583 message to ISO 20022 XML and back, using the same YAML profile.
+- Ships the `card-transfer-pacs008` and `card-transfer-response-pacs002` profiles.
+- Reports what was mapped, defaulted, generated, inferred, carried as supplementary data, dropped or excluded.
+- Validates the XML against the bundled XSDs and supports a strict mode and custom converters.
+- Includes an optional adapter for j8583 2.0.0.
+
+The Spring Boot starter (phase 3) and subfields such as `de48.01` are not implemented yet.
 
 The design lives in [`docs/`](docs) (in Spanish) and the roadmap in
 [`docs/08-plan-de-fases.md`](docs/08-plan-de-fases.md).
