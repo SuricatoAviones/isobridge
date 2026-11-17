@@ -20,6 +20,21 @@
     </license>
   </licenses>
 
+  <developers>
+    <developer>
+      <id>SuricatoAviones</id>
+      <name>SuricatoAviones</name>
+      <url>https://github.com/SuricatoAviones</url>
+    </developer>
+  </developers>
+
+  <scm>
+    <url>https://github.com/SuricatoAviones/isobridge</url>
+    <connection>scm:git:https://github.com/SuricatoAviones/isobridge.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/SuricatoAviones/isobridge.git</developerConnection>
+    <tag>v0.2.1</tag>
+  </scm>
+
   <modules>
     <module>isobridge-core</module>
     <module>isobridge-iso20022</module>
@@ -187,7 +202,7 @@
             <extensions>true</extensions>
             <configuration>
               <publishingServerId>central</publishingServerId>
-              <autoPublish>false</autoPublish>
+              <autoPublish>true</autoPublish>
             </configuration>
           </plugin>
         </plugins>
