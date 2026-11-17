@@ -17,7 +17,7 @@ Esta carpeta es la fuente de verdad del diseño. Si el código y la documentaci�
 | [07-informe-de-conversion.md](07-informe-de-conversion.md) | Estados, formato y reglas del informe |
 | [08-plan-de-fases.md](08-plan-de-fases.md) | Fases 0 a 4 con tareas y criterio de cierre |
 | [09-convenciones.md](09-convenciones.md) | Código, Git, pruebas, seguridad y definición de terminado |
-| [10-dependencias-y-preguntas.md](10-dependencias-y-preguntas.md) | Dependencias, licencias, proyectos relacionados y preguntas abiertas |
+| [10-dependencias-y-preguntas.md](10-dependencias-y-preguntas.md) | Dependencias, licencias, publicación en Maven Central, trabajo pendiente y preguntas abiertas |
 | [11-guia-de-perfiles.md](11-guia-de-perfiles.md) | Procedimiento para escribir y verificar un perfil |
 | [PROMPT-INICIAL.md](PROMPT-INICIAL.md) | Prompts para trabajar con un agente de IA |
 

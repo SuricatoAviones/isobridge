@@ -42,9 +42,68 @@ Revisados antes de diseñar:
 | [Intellias Converter Accelerator](https://intellias.com/?p=91739) | Mismo problema, producto comercial |
 | [Mixar](https://github.com/moksnow/Mixar) | Convierte SWIFT MT a ISO 20022; no cubre ISO 8583 |
 
+## Publicación en Maven Central
+
+La 0.2.1 se publicó el 16 de noviembre de 2026 con el perfil `release` del POM padre. El procedimiento para la próxima versión:
+
+1. Sube la versión en los POM (el padre y el `<parent>` de cada módulo), actualiza `CHANGELOG.md` y crea el tag `vX`.
+2. Credenciales en `~/.m2/settings.xml`, que nunca va al repositorio:
+   - Un `<server>` con id `central`, con el token del Central Portal.
+   - Un `<profile>` `sign` con la propiedad `gpg.passphrase` y `<activeProfiles>` que lo active.
+3. Ejecuta `./mvnw -Prelease clean deploy`, con `gpg` en el `PATH` (en Windows, `C:\Program Files\GnuPG\bin`).
+4. El perfil genera fuentes y Javadoc, firma con GPG y sube el bundle con `central-publishing-maven-plugin` (`publishingServerId=central`, `autoPublish=true`).
+5. `isobridge-samples` no se publica: su POM lleva `maven.deploy.skip=true`.
+6. Comprueba en `https://repo1.maven.org/maven2/io/github/suricatoaviones/<módulo>/<versión>/` que el POM responde 200; la réplica puede tardar hasta dos horas.
+
+Datos de la firma:
+
+| Dato | Valor |
+| --- | --- |
+| Huella | `4D6EC848BD0AA0813859FE331C7CBC19D21CBF15` |
+| UID | `SuricatoAviones <45766871+SuricatoAviones@users.noreply.github.com>` |
+| Servidor de claves | `hkps://keyserver.ubuntu.com` |
+| Certificado de revocación | `~/.gnupg/openpgp-revocs.d/4D6E…CBF15.rev`; guárdalo fuera del equipo |
+
+Si el token del Portal rota, se regenera en el Portal y se actualiza `settings.xml`.
+
+## Trabajo pendiente
+
+Lo que queda tras el cierre de la fase 4, con los pasos para cada punto.
+
+### Benchmark JMH
+
+1. Módulo `isobridge-benchmarks` con `jmh-core` y `jmh-generator-annprocess` (1.37); no se publica.
+2. Clase `ConversionBenchmark`: puente real con `DomXmlDocumentAccessFactory`, `validateXsd(false)`, reloj e identificador fijos, y un `@Benchmark` de ida y otro de vuelta.
+3. `maven-shade-plugin` con `mainClass org.openjdk.jmh.Main`.
+4. Medir: `.\mvnw.cmd -pl isobridge-benchmarks -am package` y después `java -jar isobridge-benchmarks\target\benchmarks.jar -f 1 -wi 5 -i 5 -r 1 -w 1`.
+5. Copiar los `ops/s` al README indicando máquina y JVM, y marcar la casilla de `docs/08`.
+
+### Subcampos (`de48.01`)
+
+1. Decidir la API: métodos `subfield`/`setSubfield` en `Iso8583Message` o una interfaz nueva `SubfieldCapable` que implementen los adaptadores que puedan.
+2. Quitar el rechazo del `Builder` cuando el adaptador soporte subcampos; el lector ya acepta la sintaxis.
+3. Implementar lectura y escritura en el motor y en el adaptador de j8583 (DE 48 en TLV).
+4. Decidir dónde viaja DE 48 en pacs.008 (datos suplementarios) y cómo vuelve.
+5. Pruebas de lector, motor, adaptador e ida y vuelta; actualizar `03`, `04`, `05` y cerrar la pregunta.
+
+### Perfil `cain`
+
+1. Descargar `cain.001.001.09` y/o `cain.002.001.09` de iso20022.org; anotar origen y SHA-256 en `02-arquitectura.md` y copiarlos a `isobridge-iso20022`.
+2. Diseñar el mapeo de autorización (tarjeta, monto, terminal, comercio) con el procedimiento de `11-guia-de-perfiles.md`.
+3. Verificar cada ruta contra el XSD y los códigos contra las listas externas, como en `05-perfil-incluido.md`.
+4. Añadir la prueba de extremo a extremo y la de ida y vuelta en `isobridge-profiles`.
+5. Documentar el perfil en `05-perfil-incluido.md` y cerrar la pregunta.
+
+### Redistribución de los XSD
+
+1. Leer los términos de uso de los esquemas publicados por iso20022.org.
+2. Escribir a la RA de ISO 20022 preguntando si se puede redistribuir dentro de un JAR Apache 2.0.
+3. Guardar la respuesta y documentarla aquí y en el `NOTICE` del JAR.
+4. Si no lo permiten: quitar los XSD del JAR y sustituirlos por un paso de descarga documentado, con los SHA-256 ya anotados.
+
 ## Preguntas abiertas
 
-Cada una bloquea la fase indicada. Se cierra editando el documento afectado.
+Cada una bloquea la fase indicada. Se cierra editando el documento afectado; los pasos concretos de las tres primeras están en `## Trabajo pendiente`.
 
 | Pregunta | Bloquea | Documento afectado |
 | --- | --- | --- |

@@ -88,7 +88,7 @@ Objetivo: que cualquiera pueda usarla.
 - [x] `README.md` con guía rápida, tabla de módulos y ejemplo completo.
 - [x] Guía "Cómo escribir un perfil" en `docs/11-guia-de-perfiles.md`.
 - [x] Javadoc en toda la API pública; `mvn javadoc:javadoc` termina en `BUILD SUCCESS`.
-- [ ] Medición con JMH y resultado en el README.
+- [ ] Medición con JMH y resultado en el README. Los pasos están en `10-dependencias-y-preguntas.md`.
 - [x] Umbral de cobertura en el CI: JaCoCo exige 90% de líneas en `isobridge-core`.
 - [x] Publicación en Maven Central: perfil `release` con firma GPG, fuentes y Javadoc; namespace `io.github.suricatoaviones` verificado. La 0.2.1 está publicada (16 de noviembre de 2026).
 - [x] `CHANGELOG.md` y versión 0.2.1.
