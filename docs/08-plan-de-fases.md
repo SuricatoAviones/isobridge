@@ -90,10 +90,10 @@ Objetivo: que cualquiera pueda usarla.
 - [x] Javadoc en toda la API pública; `mvn javadoc:javadoc` termina en `BUILD SUCCESS`.
 - [ ] Medición con JMH y resultado en el README.
 - [x] Umbral de cobertura en el CI: JaCoCo exige 90% de líneas en `isobridge-core`.
-- [ ] Configuración de publicación en Maven Central: firma, fuentes y Javadoc. Requiere el namespace verificado y las credenciales de Sonatype, que no están en el repositorio.
+- [x] Publicación en Maven Central: perfil `release` con firma GPG, fuentes y Javadoc; namespace `io.github.suricatoaviones` verificado. La 0.2.1 está publicada (16 de noviembre de 2026).
 - [x] `CHANGELOG.md` y versión 0.2.1.
 
-Cierre: la versión 0.2.1 se instala desde Maven Central con las coordenadas del README. La 0.2.1 está publicada en GitHub Releases; la publicación en Maven Central sigue pendiente de las credenciales y del namespace.
+Cierre: la versión 0.2.1 se instala desde Maven Central con las coordenadas del README. Cumplido el 16 de noviembre de 2026. Queda la medición con JMH, marcada como pendiente arriba.
 
 ## Qué no entra en ninguna fase
 

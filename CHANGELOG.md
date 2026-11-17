@@ -14,6 +14,10 @@ reason codes.
 - The response profile wrote `ACSC` in `StsRsnInf/Rsn/Cd`. `ACSC` is a status code, not a status reason; approved responses now use `NARR`, the only generic reason available. The status remains `ACSC`.
 - The reason codes `MS03`, `AM12`, `AC01`, `AM04`, `AM02`, `AM05` and `NARR` are now checked against `ExternalStatusReason1Code` (2Q2026 edition).
 
+### Published
+
+- Version 0.2.1 is on Maven Central (16 November 2026), signed and validated; `isobridge-samples` is not published.
+
 ## [0.2.0] - 2026-11-16
 
 Adds the Spring Boot integration and the release polish.
@@ -46,4 +50,3 @@ First release. Covers phases 0 to 2 of the roadmap.
 - Subfields such as `de48.01` are rejected until `Iso8583Message` exposes them.
 - DE 39 in the response profile is forward-only; approved responses use `NARR` as a provisional reason because the status reason list has no approval code.
 - The core requires Java 17 at runtime; building requires JDK 21.
-- Not published to Maven Central yet.

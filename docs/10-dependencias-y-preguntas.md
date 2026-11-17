@@ -51,7 +51,6 @@ Cada una bloquea la fase indicada. Se cierra editando el documento afectado.
 | ¿Cuándo se amplía `Iso8583Message` para exponer subcampos, como `de48.01`? Hasta entonces el puente rechaza esos perfiles | Después de la fase 2 | `03-modelo-de-clases.md` |
 | ¿Permiten los términos de ISO 20022 redistribuir sus XSD dentro del JAR publicado? Se incluyen en el repositorio; falta confirmarlo antes de publicar | Fase 4 | Este |
 | ¿Se añade un segundo perfil con los mensajes de tarjetas de ISO 20022 (familia `cain`), que corresponden mejor a una autorización que pacs.008? | Después de la fase 2 | `05-perfil-incluido.md` |
-| ¿Nombre definitivo y coordenadas Maven? Comprobar que estén libres en Maven Central | Fase 4 | `AGENTS.md` |
 
 ## Decisiones cerradas en la fase 1
 
@@ -73,3 +72,4 @@ Cada una bloquea la fase indicada. Se cierra editando el documento afectado.
 - El starter carga los perfiles con un `ProfileReader` construido sobre el registro que ya incluye los beans `FieldConverter`; si usara `Profile.fromClasspath`, un perfil con un conversor propio se rechazaría antes de registrar el bean.
 - Las métricas y la salud se activan con clases anidadas condicionadas por `@ConditionalOnClass`; sin Micrometer o Actuator el starter funciona igual. La salud publica `count` y la lista `id vversión`.
 - El enmascarado no se puede desactivar: el núcleo lo aplica siempre. Se retiró la propiedad `isobridge.mask-sensitive` que figuraba en el borrador, para no prometer un interruptor que rompería la regla del PAN.
+- Las coordenadas `io.github.suricatoaviones` están verificadas y la 0.2.1 está publicada en Maven Central (16 de noviembre de 2026), con el perfil `release` que firma con la clave de `SuricatoAviones`.

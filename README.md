@@ -36,6 +36,31 @@ Subfields such as `de48.01` are not implemented yet.
 | [`isobridge-spring-boot-starter`](isobridge-spring-boot-starter) | Auto-configuration, properties, metrics and health |
 | [`isobridge-samples`](isobridge-samples) | Sample Spring Boot application |
 
+## Install
+
+Version 0.2.1 is on Maven Central:
+
+```xml
+<dependency>
+  <groupId>io.github.suricatoaviones</groupId>
+  <artifactId>isobridge-core</artifactId>
+  <version>0.2.1</version>
+</dependency>
+<dependency>
+  <groupId>io.github.suricatoaviones</groupId>
+  <artifactId>isobridge-iso20022</artifactId>
+  <version>0.2.1</version>
+</dependency>
+<dependency>
+  <groupId>io.github.suricatoaviones</groupId>
+  <artifactId>isobridge-profiles</artifactId>
+  <version>0.2.1</version>
+</dependency>
+```
+
+The optional j8583 adapter is `isobridge-j8583`, and the Spring Boot starter is
+`isobridge-spring-boot-starter`. The sample application is not published.
+
 ## Quick start
 
 ```java
